@@ -1,0 +1,144 @@
+/* ================================== */
+/* ESTILOS DO HEADER         */
+/* ================================== */
+.headerBar {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.headerIconBtn {
+    background: none;
+    border: none;
+    color: var(--secondary-white);
+    cursor: pointer;
+    padding: 8px;
+    line-height: 0;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.screenTitle {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    /* Ajuste para centralizar corretamente com o botão de voltar visível */
+    transform: translateX(-20px); 
+}
+
+
+/* ================================== */
+/* ESTILOS DO CONTEÚDO ADMIN     */
+/* ================================== */
+
+.contentArea {
+    padding: 20px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.message {
+    text-align: center;
+    font-weight: bold;
+    min-height: 20px;
+    color: var(--primary-dark-purple);
+    transition: opacity 0.3s;
+    padding: 0 20px;
+}
+
+.adminSection {
+    background-color: var(--secondary-white);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.sectionTitle {
+    margin-top: 0;
+    text-align: left;
+    border-bottom: 1px solid var(--primary-light-purple);
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-dark-black);
+}
+
+.configItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.configItem:last-child {
+    margin-bottom: 0;
+}
+
+.configItem label {
+    margin-bottom: 5px;
+    color: var(--primary-dark-black);
+    font-weight: 500;
+}
+
+.actionButton {
+    padding: 8px 15px;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 100px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 28px;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.primaryButton {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+}
+
+.secondaryButton {
+    background-color: var(--secondary-white);
+    color: var(--primary-dark-purple);
+    border: 1.5px solid var(--primary-dark-purple);
+}
+
+.fullWidthButton {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.deactivateButton {
+    background-color: var(--feedback-incorrect-border);
+    color: white;
+}
+
+.formInput,
+.formSelect {
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1.5px solid var(--secondary-dark-grey);
+    background-color: var(--secondary-white);
+}
+
+.statusText {
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.statusText strong {
+    color: var(--primary-dark-purple);
+}

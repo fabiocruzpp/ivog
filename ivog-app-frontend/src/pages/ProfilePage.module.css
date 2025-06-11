@@ -1,0 +1,116 @@
+.screenContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
+.headerBar {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.headerIconBtn {
+    background: none;
+    border: none;
+    color: var(--secondary-white);
+    cursor: pointer;
+    padding: 8px;
+    line-height: 0;
+    text-decoration: none;
+}
+
+.screenTitle {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    padding-right: 40px; /* Compensa o botão de voltar */
+}
+
+.formContentArea {
+    padding: 20px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formInstructions {
+    font-size: 14px;
+    color: var(--secondary-dark-grey);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formGroup label {
+    font-weight: 600;
+    color: var(--primary-dark-purple);
+    font-size: 14px;
+    padding-left: 5px;
+    text-align: left;
+}
+
+.formInput,
+.formSelect {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--secondary-white);
+    color: var(--primary-dark-black);
+    border: 1.5px solid var(--secondary-dark-grey);
+    font-size: 16px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 0;
+    font-family: inherit; /* Garante que use a fonte Poppins */
+}
+
+.formInput:focus,
+.formSelect:focus {
+    border-color: var(--primary-purple);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-light-purple);
+}
+
+.submitButton {
+    font-family: var(--font-family-poppins);
+    padding: 14px 20px;
+    border-radius: 28px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 3px 8px rgba(40, 167, 69, 0.2);
+    width: 100%;
+    margin-top: 15px;
+    background-color: #28a745; /* Cor verde para salvar */
+    color: var(--secondary-white);
+}
+
+.submitButton:hover {
+    background-color: #218838;
+}
+
+.submitButton:active {
+    transform: translateY(1px);
+}

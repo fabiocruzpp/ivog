@@ -1,0 +1,139 @@
+.screenContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
+.headerBar {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.headerIconBtn {
+    background: none;
+    border: none;
+    color: var(--secondary-white);
+    cursor: pointer;
+    padding: 8px;
+    line-height: 0;
+}
+
+.screenTitle {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    /* Adicionado padding para compensar o botão de voltar invisível */
+    padding-left: 40px;
+}
+
+.contentArea {
+    padding: 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.periodTabs {
+    display: flex;
+    justify-content: space-around;
+    padding: 4px;
+    margin-bottom: 10px;
+    background-color: var(--secondary-white);
+    border-radius: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.periodTabButton {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    background-color: transparent;
+    color: var(--secondary-dark-grey);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.periodTabButton.active {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    box-shadow: 0 2px 4px rgba(108, 48, 191, 0.2);
+}
+
+.leaderboardItem {
+    background-color: var(--secondary-white);
+    padding: 10px 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rankBadge {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary-dark-purple);
+    background-color: var(--primary-light-purple);
+    border: 1.5px solid var(--primary-dark-purple);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rank1 {
+    background-color: var(--gold-color);
+    border-color: var(--gold-color);
+    color: var(--primary-dark-black);
+}
+
+.rank2 {
+    background-color: var(--silver-color);
+    border-color: var(--silver-color);
+    color: var(--primary-dark-black);
+}
+
+.rank3 {
+    background-color: var(--bronze-color);
+    border-color: var(--bronze-color);
+    color: var(--secondary-white);
+}
+
+.userInfo {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.userName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary-dark-black);
+}
+
+.userPoints {
+    font-size: 14px;
+    color: var(--primary-dark-purple);
+    font-weight: 600;
+    text-align: right;
+}

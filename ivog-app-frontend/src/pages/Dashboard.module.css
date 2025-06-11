@@ -1,0 +1,129 @@
+.screenContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
+.header {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    padding: 30px 20px 50px 20px;
+    text-align: center;
+    border-bottom-left-radius: 35px;
+    border-bottom-right-radius: 35px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-image: url('https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/grxu6mvy67p6/b/meu-telegram-miniapp-frontend/o/Ivo-G-Logo.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 100px;
+}
+
+.mainContent {
+    padding: 25px 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.welcomeText {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 5px;
+    color: var(--primary-dark-black);
+}
+
+.welcomeText h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-dark-black);
+    margin: 0 0 4px 0;
+}
+
+.welcomeText p {
+    font-size: 15px;
+    color: var(--secondary-dark-grey);
+    margin: 0;
+    opacity: 0.9;
+}
+
+.actionButton {
+    padding: 14px 20px;
+    border-radius: 28px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 3px 8px rgba(108, 48, 191, 0.15);
+    width: 100%; 
+    max-width: 280px; 
+    box-sizing: border-box; 
+    text-decoration: none; /* Para o <Link> do React Router */
+}
+
+.actionButton:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 4px rgba(108, 48, 191, 0.2);
+}
+
+.primaryButton {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+}
+.primaryButton:hover {
+    background-color: #5a28a0;
+}
+
+.secondaryButton {
+    background-color: var(--secondary-white);
+    color: var(--primary-dark-purple);
+    border: 1.5px solid var(--primary-dark-purple);
+}
+.secondaryButton:hover {
+    background-color: #f5f0ff;
+}
+
+.tertiaryButton {
+    background-color: transparent;
+    color: var(--secondary-dark-grey);
+    box-shadow: none;
+    font-weight: 500;
+}
+.tertiaryButton:hover {
+    color: var(--primary-dark-black);
+    background-color: var(--secondary-soft-grey);
+}
+
+.adminButton {
+    background-color: #dc3545; /* Cor vermelha do botão de admin original */
+    color: var(--secondary-white);
+}
+
+.adminButton:hover {
+    background-color: #c82333;
+}
+
+.challengeButton {
+    background-color: #ffc107; /* Um amarelo/dourado vibrante */
+    color: #212529; /* Um texto escuro para bom contraste */
+    border: 1.5px solid #e0a800;
+}
+
+.challengeButton:hover {
+    background-color: #e0a800; /* Um tom mais escuro para o hover */
+}

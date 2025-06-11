@@ -1,0 +1,222 @@
+.screenContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
+.headerBar {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.headerIconBtn {
+    background: none;
+    border: none;
+    color: var(--secondary-white);
+    cursor: pointer;
+    padding: 8px;
+    line-height: 0;
+    text-decoration: none;
+}
+
+.screenTitle {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    padding-right: 40px; /* Compensa o botão de voltar */
+}
+
+/* Estilos para o card de resumo do usuário */
+.userSummarySection {
+    background-color: var(--secondary-white);
+    padding: 20px;
+    margin: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--secondary-dark-grey);
+    object-fit: cover;
+    border: 2px solid var(--primary-light-purple);
+    flex-shrink: 0;
+}
+
+.userDetails {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.userName {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-dark-black);
+    margin: 0;
+}
+
+.highlightStatsGrid {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.statItem {
+    text-align: center;
+    background-color: var(--primary-background);
+    padding: 6px 8px;
+    border-radius: 8px;
+    flex-basis: 0;
+    flex-grow: 1;
+}
+
+.statValue {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-dark-purple);
+    display: block;
+    margin-bottom: 1px;
+}
+
+.statLabel {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--secondary-dark-grey);
+    display: block;
+    line-height: 1.2;
+}
+
+/* Estilos para as Abas */
+.tabsNavigation {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 15px;
+    margin-bottom: 15px;
+    background-color: var(--secondary-white);
+    border-radius: 28px;
+    margin-left: 15px;
+    margin-right: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tabButton {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    flex-grow: 1;
+    margin: 4px;
+    background-color: transparent;
+    color: var(--secondary-dark-grey);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.tabButton.active {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    box-shadow: 0 2px 4px rgba(108, 48, 191, 0.3);
+}
+
+.contentArea {
+    padding: 0 15px 15px 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.tabContent {
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tabContent.active {
+    display: flex;
+}
+
+/* Estilos para os cards de estatísticas */
+.listStatCard {
+    background-color: var(--secondary-white);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.itemIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: var(--primary-light-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.itemInfo {
+    flex-grow: 1;
+}
+
+.itemTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-dark-black);
+    margin: 0 0 8px 0;
+}
+
+.itemDetail {
+    font-size: 12px;
+    color: var(--primary-dark-black);
+    font-weight: 500;
+}
+
+.itemDetail strong {
+    color: var(--primary-dark-purple);
+}
+
+.progressBarContainer {
+    width: 100%;
+    height: 8px;
+    background-color: var(--primary-light-purple);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progressBarFill {
+    height: 100%;
+    background-color: var(--primary-dark-purple);
+    border-radius: 4px;
+    width: 0%; /* Será definido via estilo inline */
+    transition: width 0.5s ease-in-out;
+}
+
+.noDataMessage {
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+    color: var(--secondary-dark-grey);
+}

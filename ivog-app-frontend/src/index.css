@@ -1,0 +1,42 @@
+/* Importa a fonte Poppins que o design original usa */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Define as variáveis de cor e fonte para todo o aplicativo */
+:root {
+    --primary-dark-black: #343434;
+    --primary-dark-purple: #6C30BF;
+    --primary-purple: #A483EC;
+    --primary-light-purple: #EDE4FF;
+    --primary-background: #F8F8F8;
+    --secondary-dark-grey: #B9B9B9;
+    --secondary-glass-grey: rgba(156, 156, 156, 0.5);
+    --secondary-soft-grey: #F2F2F2;
+    --secondary-white: #FCFCFC;
+    --font-family-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --feedback-correct-bg: #D9F7E8;
+    --feedback-correct-border: #28A745;
+    --feedback-correct-text: #1E7E34;
+    --feedback-incorrect-bg: #FDDDE1;
+    --feedback-incorrect-border: #DC3545;
+    --feedback-incorrect-text: #A42832;
+    --gold-color: #FFD700;
+    --silver-color: #C0C0C0;
+    --bronze-color: #CD7F32;
+    padding: 0x;
+}
+
+/* Estilos base para o corpo da página */
+body {
+    font-family: var(--font-family-poppins);
+    margin: 0;
+    background-color: var(--primary-background);
+    color: var(--primary-dark-black);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Garante que o app ocupe toda a altura */
+#root, body, html {
+    height: 100%;
+    padding: 0px;
+}

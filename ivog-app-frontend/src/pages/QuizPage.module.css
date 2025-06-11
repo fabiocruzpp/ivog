@@ -1,0 +1,71 @@
+.screenContainer {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+.headerBar {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+.headerIconBtn {
+    background: none; border: none; color: var(--secondary-white);
+    cursor: pointer; padding: 8px; line-height: 0; text-decoration: none;
+}
+.screenTitle {
+    font-size: 20px; font-weight: 700; text-align: center;
+    flex-grow: 1; margin: 0; padding-right: 40px;
+}
+.infoBar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0px 15px; background-color: var(--secondary-white);
+    border-bottom: 1px solid var(--primary-light-purple);
+    font-size: 12px; flex-shrink: 0; min-height: 40px;
+}
+.questionCounter {
+    text-align: left; font-weight: 600; color: var(--primary-dark-purple); font-size: 13px;
+}
+.topicDisplay {
+    text-align: center; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 11px; color: #777; font-weight: 500; line-height: 1.3;
+}
+.topicTheme { font-weight: 600; color: var(--primary-dark-black); }
+.topicSubtheme { font-style: italic; }
+.pointsCounter {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 5px; color: var(--primary-dark-black); font-weight: 600; font-size: 13px;
+}
+.contentArea {
+    padding: 20px 15px; flex-grow: 1; text-align: center; overflow-y: auto;
+}
+.questionText {
+    font-size: 16px; font-weight: 500; color: var(--primary-dark-black);
+    margin-top: 15px; margin-bottom: 25px; line-height: 1.6;
+}
+.optionsContainer { display: flex; flex-direction: column; gap: 10px; }
+.answerOption {
+    background-color: var(--secondary-white); color: var(--primary-dark-black);
+    border: 1.5px solid var(--secondary-dark-grey); padding: 12px 15px;
+    border-radius: 24px; font-size: 15px; font-weight: 500;
+    cursor: pointer; text-align: left; transition: all 0.2s;
+    width: 100%; box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.answerOption:disabled { opacity: 0.9; cursor: default; }
+.correct {
+    background-color: var(--feedback-correct-bg);
+    border-color: var(--feedback-correct-border);
+    color: var(--feedback-correct-text);
+    font-weight: 600;
+}
+.incorrect {
+    background-color: var(--feedback-incorrect-bg);
+    border-color: var(--feedback-incorrect-border);
+    color: var(--feedback-incorrect-text);
+}
