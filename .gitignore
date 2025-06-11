@@ -23,5 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 /home/fabiocruzpp/ivog/ivog-app-backend/.env
-/home/fabiocruzpp/ivog/ivog-app-backend/node_modules
-/home/fabiocruzpp/ivog/ivog-app-frontend/node_modules
+node_modules/
