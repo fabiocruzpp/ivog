@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 /home/fabiocruzpp/ivog/ivog-app-backend/.env
 node_modules/
+**/.env
