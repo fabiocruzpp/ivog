@@ -1,19 +1,17 @@
-// ivog-app-frontend/src/pages/ProfilePage.jsx
+// ivog-app-frontend/src/pages/RegisterPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
-import { Link } from 'react-router-dom';
-import styles from './ProfilePage.module.css';
+// CORREÇÃO: Caminhos de importação ajustados para serem absolutos a partir da raiz do projeto,
+// o que resolve o erro de compilação "Could not resolve".
+import api from '/src/services/api.js';
+import { useNavigate } from 'react-router-dom';
+import styles from '/src/pages/RegisterPage.module.css';
 
-const BackArrowIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
-);
-
-// Componentes auxiliares do formulário
+// Componentes auxiliares do formulário (sem alterações)
 const FormSelect = ({ label, name, value, onChange, options, disabled = false, defaultOptionText }) => (
     <div className={styles.formGroup}>
         <label htmlFor={name}>{label}</label>
-        <select id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formSelect}>
+        <select id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formSelect} required>
             <option value="">{defaultOptionText}</option>
             {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
@@ -22,12 +20,12 @@ const FormSelect = ({ label, name, value, onChange, options, disabled = false, d
 const FormInput = ({ label, name, value, onChange, disabled = false, placeholder = '' }) => (
     <div className={styles.formGroup}>
         <label htmlFor={name}>{label}</label>
-        <input type="text" id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} />
+        <input type="text" id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} required />
     </div>
 );
 
-
-function ProfilePage() {
+function RegisterPage() {
+    const navigate = useNavigate();
     const [telegramId, setTelegramId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -52,38 +50,25 @@ function ProfilePage() {
         setFormData(prev => ({ ...prev, ...(resetMap[name] || {}), [name]: value }));
     };
 
-    // 1. Busca dados iniciais ao carregar
+    // 1. Busca dados iniciais (DDDs) ao carregar a página
     useEffect(() => {
-        const user = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (user && user.id) {
-            const currentId = user.id.toString();
-            setTelegramId(currentId);
+        const telegram = window.Telegram.WebApp;
+        const user = telegram.initDataUnsafe?.user;
 
-            const fetchInitialData = async () => {
-                try {
-                    setLoading(true);
-                    const [dddsRes, profileRes] = await Promise.all([
-                        api.get('/options/ddds'),
-                        api.get(`/user/${currentId}`).catch(() => ({ data: {} }))
-                    ]);
-                    setOptions(prev => ({ ...prev, ddds: dddsRes.data }));
-                    if(profileRes.data) {
-                       setFormData(prev => ({ ...prev, ...profileRes.data }));
-                    }
-                } catch (error) {
-                    setMessage('Falha ao carregar dados.');
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchInitialData();
+        if (user && user.id) {
+            setTelegramId(user.id.toString());
+            setFormData(prev => ({...prev, first_name: user.first_name || ''}));
+            api.get('/options/ddds').then(res => {
+                setOptions(prev => ({ ...prev, ddds: res.data }));
+            }).catch(err => setMessage('Falha ao carregar opções.'))
+            .finally(() => setLoading(false));
         } else {
             setMessage('Não foi possível identificar o utilizador.');
             setLoading(false);
         }
     }, []);
 
-    // 2. Efeitos em cascata para carregar as opções dos dropdowns seguintes
+    // 2. Busca Canais quando o DDD muda
     useEffect(() => {
         if (formData.ddd) {
             api.get(`/options/canais?ddd=${formData.ddd}`).then(res => {
@@ -91,7 +76,8 @@ function ProfilePage() {
             });
         }
     }, [formData.ddd]);
-
+    
+    // 3. Busca o próximo passo quando o Canal Principal muda
     useEffect(() => {
         if (!formData.canal_principal) return;
         const { ddd, canal_principal } = formData;
@@ -104,6 +90,7 @@ function ProfilePage() {
         }
     }, [formData.ddd, formData.canal_principal]);
 
+    // 4. Busca o próximo passo quando o Tipo de Parceiro muda (Fluxo Parceiros)
     useEffect(() => {
         if (!formData.tipo_parceiro) return;
         const { ddd, canal_principal, tipo_parceiro } = formData;
@@ -114,16 +101,25 @@ function ProfilePage() {
         }
     }, [formData.ddd, formData.canal_principal, formData.tipo_parceiro]);
 
+    // 5. CORREÇÃO: Busca o próximo passo quando a Rede é selecionada
     useEffect(() => {
         if (!formData.rede_parceiro) return;
         const { ddd, canal_principal, tipo_parceiro, rede_parceiro } = formData;
+
         if (canal_principal === 'Distribuição') {
-            api.get(`/options/cargos?canal=${canal_principal}`).then(res => setOptions(prev => ({...prev, cargos: res.data})));
+            // Se o canal é Distribuição, busca os cargos.
+            api.get(`/options/cargos?canal=${canal_principal}`).then(res => {
+                setOptions(prev => ({...prev, cargos: res.data}));
+            });
         } else if (tipo_parceiro === 'Parceiro Lojas') {
-            api.get(`/options/lojas?ddd=${ddd}&canal=${canal_principal}&rede=${rede_parceiro}`).then(res => setOptions(prev => ({...prev, lojas: res.data })));
+            // Se o fluxo é Parceiro > Lojas, busca as lojas.
+            api.get(`/options/lojas?ddd=${ddd}&canal=${canal_principal}&rede=${rede_parceiro}`).then(res => {
+                setOptions(prev => ({...prev, lojas: res.data }));
+            });
         }
     }, [formData.ddd, formData.canal_principal, formData.tipo_parceiro, formData.rede_parceiro]);
     
+    // 6. Busca Cargos quando a Loja é selecionada (final de alguns fluxos)
     useEffect(() => {
         if(!formData.loja_revenda) return;
         api.get(`/options/cargos?canal=${formData.canal_principal}&tipoParceiro=${formData.tipo_parceiro}`).then(res => {
@@ -133,18 +129,19 @@ function ProfilePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage('A gravar...');
+        setMessage('A finalizar cadastro...');
         try {
             await api.post('/register', { ...formData, telegram_id: telegramId });
-            setMessage('Perfil gravado com sucesso!');
-            setTimeout(() => setMessage(''), 3000);
+            setMessage('Cadastro realizado com sucesso!');
+            navigate('/');
         } catch (error) {
-            setMessage('Erro ao gravar o perfil. Tente novamente.');
+            setMessage('Erro ao finalizar o cadastro. Tente novamente.');
         }
     };
 
-    if (loading) return <p style={{ textAlign: 'center' }}>A carregar perfil...</p>;
+    if (loading) return <p style={{ textAlign: 'center', padding: '20px' }}>A carregar formulário...</p>;
     
+    // Lógica de renderização condicional
     const showRede = (formData.canal_principal === 'Distribuição' || formData.tipo_parceiro === 'Parceiro Lojas') && options.redes.length > 0;
     const showLoja = (formData.canal_principal === 'Loja Propria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
     const showCargo = options.cargos.length > 0;
@@ -152,13 +149,12 @@ function ProfilePage() {
     return (
         <div className={styles.screenContainer}>
             <div className={styles.headerBar}>
-                <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-                <h1 className={styles.screenTitle}>Atualizar Dados</h1>
+                <h1 className={styles.screenTitle}>Bem-vindo ao IvoG!</h1>
             </div>
             <div className={styles.formContentArea}>
-                <p className={styles.formInstructions}>Mantenha os seus dados atualizados para uma experiência completa.</p>
+                <p className={styles.formInstructions}>Complete o seu cadastro para começar a jogar e competir.</p>
                 <form onSubmit={handleSubmit}>
-                    <FormInput label="Nome" name="first_name" value={formData.first_name} onChange={handleChange} />
+                    <FormInput label="O seu Nome" name="first_name" value={formData.first_name} onChange={handleChange} />
                     <FormInput label="ID do Telegram" name="telegram_id" value={telegramId} disabled={true} />
                     <hr className={styles.divider} />
                     <FormSelect label="DDD" name="ddd" value={formData.ddd} onChange={handleChange} options={options.ddds} defaultOptionText="Selecione o seu DDD" />
@@ -168,7 +164,7 @@ function ProfilePage() {
                     {showLoja && <FormSelect label="Loja" name="loja_revenda" value={formData.loja_revenda} onChange={handleChange} options={options.lojas} defaultOptionText="Selecione a Loja" />}
                     {showCargo && <FormSelect label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} options={options.cargos} defaultOptionText="Selecione o Cargo" />}
                     
-                    <button type="submit" className={styles.submitButton}>Gravar Alterações</button>
+                    <button type="submit" className={styles.submitButton}>Concluir Cadastro</button>
                     {message && <p className={styles.messageFeedback}>{message}</p>}
                 </form>
             </div>
@@ -176,4 +172,4 @@ function ProfilePage() {
     );
 }
 
-export default ProfilePage;
+export default RegisterPage;

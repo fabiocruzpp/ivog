@@ -1,0 +1,137 @@
+/* ivog-app-frontend/src/pages/RegisterPage.module.css */
+
+.screenContainer {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
+.headerBar {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centraliza o título */
+    padding: 10px 15px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.screenTitle {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+}
+
+.formContentArea {
+    padding: 20px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.formContentArea form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.formInstructions {
+    font-size: 14px;
+    color: var(--secondary-dark-grey);
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formGroup label {
+    font-weight: 600;
+    color: var(--primary-dark-purple);
+    font-size: 14px;
+    padding-left: 5px;
+    text-align: left;
+}
+
+.formInput,
+.formSelect {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--secondary-white);
+    color: var(--primary-dark-black);
+    border: 1.5px solid var(--secondary-dark-grey);
+    font-size: 16px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-family: inherit;
+}
+
+.formSelect {
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236C30BF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: .65em auto;
+    padding-right: 40px;
+}
+
+.formInput:disabled,
+.formSelect:disabled {
+    background-color: var(--secondary-soft-grey);
+    opacity: 0.7;
+    cursor: not-allowed;
+    color: #555;
+}
+
+.formInput:focus,
+.formSelect:focus {
+    border-color: var(--primary-purple);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-light-purple);
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid var(--primary-light-purple);
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.submitButton {
+    font-family: var(--font-family-poppins);
+    padding: 14px 20px;
+    border-radius: 28px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s;
+    width: 100%;
+    margin-top: 15px;
+    background-color: #28a745; 
+    color: var(--secondary-white);
+}
+
+.submitButton:hover {
+    background-color: #218838;
+}
+
+.submitButton:active {
+    transform: translateY(1px);
+}
+
+.messageFeedback {
+    text-align: center;
+    font-weight: bold;
+    color: var(--primary-dark-purple);
+}
