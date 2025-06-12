@@ -1,228 +1,322 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
+import styles from './AdminPage.module.css';
 
 const ADMIN_TELEGRAM_ID = '1318210843';
 
-function AdminPage() {
-  const [configs, setConfigs] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [telegramId, setTelegramId] = useState(null);
-  
-  const [numPerguntas, setNumPerguntas] = useState('');
-  const [message, setMessage] = useState('');
+const BackArrowIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+);
 
-  // Novos estados para o formulário de desafio
-  const [temas, setTemas] = useState([]);
-  const [subtemas, setSubtemas] = useState([]);
-  const [selectedTipo, setSelectedTipo] = useState('tema');
-  const [selectedValue, setSelectedValue] = useState('');
+const getInitialFormData = () => ({
+    id: null,
+    titulo: '',
+    descricao: '',
+    data_inicio: '',
+    data_fim: '',
+    status: 'ativo',
+    num_perguntas: 10,
+    publico_alvo: { canal_principal: [], cargo: [] },
+    filtros: { tema: '', subtema: '' }, // Agora é um objeto para facilitar
+});
 
-  useEffect(() => {
-    const telegram = window.Telegram.WebApp;
-    const user = telegram.initDataUnsafe?.user;
+function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
+    const [formData, setFormData] = useState(getInitialFormData());
 
-    if (user && user.id.toString() === ADMIN_TELEGRAM_ID) {
-      setIsAuthorized(true);
-      const currentTelegramId = user.id.toString();
-      setTelegramId(currentTelegramId);
-      // Busca todas as informações iniciais necessárias para a página
-      fetchAllInitialData(currentTelegramId);
-    } else {
-      setError('Acesso negado. Esta área é restrita a administradores.');
-      setLoading(false);
-    }
-  }, []);
+    useEffect(() => {
+        if (isOpen) {
+            if (challenge) {
+                const temaFiltro = challenge.filtros?.find(f => f.tipo_filtro === 'tema')?.valor_filtro || '';
+                const subtemaFiltro = challenge.filtros?.find(f => f.tipo_filtro === 'subtema')?.valor_filtro || '';
+                setFormData({
+                    id: challenge.id || null,
+                    titulo: challenge.titulo || '',
+                    descricao: challenge.descricao || '',
+                    data_inicio: challenge.data_inicio ? challenge.data_inicio.slice(0, 16) : '',
+                    data_fim: challenge.data_fim ? challenge.data_fim.slice(0, 16) : '',
+                    status: challenge.status || 'ativo',
+                    num_perguntas: challenge.num_perguntas || 10,
+                    publico_alvo: challenge.publico_alvo_json ? JSON.parse(challenge.publico_alvo_json) : { canal_principal: [], cargo: [] },
+                    filtros: { tema: temaFiltro, subtema: subtemaFiltro },
+                });
+            } else {
+                setFormData(getInitialFormData());
+            }
+        }
+    }, [challenge, isOpen]);
 
-  const fetchAllInitialData = async (currentTelegramId) => {
-    try {
-      setLoading(true);
-      // Usamos Promise.all para buscar tudo em paralelo
-      const [configsRes, temasRes, subtemasRes] = await Promise.all([
-        api.get('/admin/configs', { params: { telegram_id: currentTelegramId } }),
-        api.get('/admin/challenge_options', { params: { type: 'tema', telegram_id: currentTelegramId } }),
-        api.get('/admin/challenge_options', { params: { type: 'subtema', telegram_id: currentTelegramId } })
-      ]);
+    if (!isOpen) return null;
 
-      setConfigs(configsRes.data);
-      setNumPerguntas(configsRes.data.num_max_perguntas_simulado || '');
-      setTemas(temasRes.data);
-      setSubtemas(subtemasRes.data);
-      
-      // Define um valor inicial para o dropdown de valor
-      if (temasRes.data.length > 0) {
-        setSelectedValue(temasRes.data[0]);
-      }
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+    
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, filtros: { ...prev.filtros, [name]: value } }));
+    };
 
-    } catch (err) {
-      setError('Falha ao carregar dados da página de admin.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleMultiSelectChange = (e, group, field) => {
+        const values = Array.from(e.target.selectedOptions, option => option.value);
+        setFormData(prev => ({
+            ...prev,
+            [group]: {
+                ...prev[group],
+                [field]: values
+            }
+        }));
+    };
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const { filtros, ...rest } = formData;
+        const filtrosArray = [];
+        if (filtros.tema) filtrosArray.push({ tipo: 'tema', valor: filtros.tema });
+        if (filtros.subtema) filtrosArray.push({ tipo: 'subtema', valor: filtros.subtema });
 
-  const handleToggle = async (key) => { /* ...código existente... */ };
-  const handleSetNumPerguntas = async (e) => { /* ...código existente... */ };
+        const finalData = { ...rest, filtros: filtrosArray };
+        if (finalData.data_inicio) finalData.data_inicio = new Date(finalData.data_inicio).toISOString();
+        if (finalData.data_fim) finalData.data_fim = new Date(finalData.data_fim).toISOString();
+        onSubmit(finalData);
+    };
 
-  // Função para lidar com a ativação de um desafio
-  const handleActivateChallenge = async (e) => {
-    e.preventDefault();
-    if (!selectedValue) {
-        setMessage('Por favor, selecione um valor para o desafio.');
-        return;
-    }
-    setMessage(`Ativando desafio ${selectedTipo}: ${selectedValue}...`);
-    try {
-        await api.post('/admin/challenge/activate', {
-            telegram_id: telegramId,
-            tipo: selectedTipo,
-            valor: selectedValue
-        });
-        setMessage('Desafio ativado com sucesso! Notificação enviada.');
-        fetchAllInitialData(telegramId); // Re-busca tudo para atualizar a tela
-    } catch (err) {
-        setMessage('Erro ao ativar desafio.');
-        console.error(err);
-    }
-  };
-
-  // Função para lidar com a desativação de um desafio
-  const handleDeactivateChallenge = async () => {
-    setMessage('Desativando desafio...');
-    try {
-        await api.post('/admin/challenge/deactivate', { telegram_id: telegramId });
-        setMessage('Desafio desativado com sucesso! Resumo enviado.');
-        fetchAllInitialData(telegramId); // Re-busca tudo para atualizar a tela
-    } catch (err) {
-        setMessage('Erro ao desativar desafio.');
-        console.error(err);
-    }
-  };
-
-  if (!isAuthorized) { /* ...código de acesso negado sem alteração... */ }
-  if (loading) { return <p style={centeredTextStyle}>Carregando painel de admin...</p>; }
-
-  const optionsList = selectedTipo === 'tema' ? temas : subtemas;
-
-  return (
-    <div style={{ fontFamily: 'sans-serif' }}>
-      <Link to="/" style={backButtonStyle}>&larr; Voltar ao Menu</Link>
-      <h1 style={{ textAlign: 'center' }}>⚙️ Painel de Administração</h1>
-      
-      {message && <p style={{ textAlign: 'center', fontWeight: 'bold', height: '20px', color: '#007BFF' }}>{message}</p>}
-
-      <div style={cardStyle}>
-        <h2 style={cardTitleStyle}>Status do Desafio</h2>
-        {configs && (
-          <div style={configItemStyle}>
-              <span>Desafio Ativo: <strong>{configs.desafio_ativo ? '🔥 SIM' : '🧘 Não'}</strong></span>
-              {configs.desafio_ativo 
-                  ? <button onClick={handleDeactivateChallenge} style={{...buttonStyle, backgroundColor: '#dc3545', color: 'white'}}>Desativar</button>
-                  : null
-              }
-          </div>
-        )}
-        {configs && configs.desafio_ativo && (
-            <div style={{marginTop: '10px'}}>
-                <p><strong>Tipo:</strong> {configs.desafio_tipo}</p>
-                <p><strong>Valor:</strong> {configs.desafio_valor}</p>
+    return (
+        <div className={styles.modalBackdrop}>
+            <div className={styles.modalContent}>
+                <h2>{challenge ? 'Editar Desafio' : 'Criar Novo Desafio'}</h2>
+                <form onSubmit={handleSubmit} className={styles.challengeForm}>
+                    <div className={styles.formGroup}>
+                        <label>Título</label>
+                        <input name="titulo" value={formData.titulo} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label>Descrição</label>
+                        <textarea name="descricao" value={formData.descricao} onChange={handleChange}></textarea>
+                    </div>
+                    <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                            <label>Data de Início</label>
+                            <input type="datetime-local" name="data_inicio" value={formData.data_inicio} onChange={handleChange} required />
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label>Data de Fim</label>
+                            <input type="datetime-local" name="data_fim" value={formData.data_fim} onChange={handleChange} required />
+                        </div>
+                    </div>
+                     <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                            <label>Status</label>
+                            <select name="status" value={formData.status} onChange={handleChange}>
+                                <option value="ativo">Ativo</option>
+                                <option value="inativo">Inativo</option>
+                                <option value="arquivado">Arquivado</option>
+                            </select>
+                        </div>
+                         <div className={styles.formGroup}>
+                            <label>Nº de Perguntas</label>
+                            <input type="number" name="num_perguntas" value={formData.num_perguntas} onChange={handleChange} min="1" required />
+                        </div>
+                    </div>
+                    <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                            <label>Conteúdo (Tema)</label>
+                            <select name="tema" value={formData.filtros.tema} onChange={handleFilterChange} required >
+                                <option value="">Selecione um tema</option>
+                                {options.temas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label>Conteúdo (Subtema)</label>
+                            <select name="subtema" value={formData.filtros.subtema} onChange={handleFilterChange}>
+                                <option value="">(Opcional) Selecione um subtema</option>
+                                {options.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                            <label>Público: Canal</label>
+                            <select multiple value={formData.publico_alvo.canal_principal} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'canal_principal')} className={styles.multiSelect}>
+                                {options.canais.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label>Público: Cargo</label>
+                            <select multiple value={formData.publico_alvo.cargo} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'cargo')} className={styles.multiSelect}>
+                                {options.cargos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className={styles.formActions}>
+                        <button type="button" onClick={onClose} className={styles.secondaryButton}>Cancelar</button>
+                        <button type="submit" className={styles.primaryButton}>Salvar</button>
+                    </div>
+                </form>
             </div>
-        )}
-      </div>
-
-      {!configs?.desafio_ativo && (
-        <div style={cardStyle}>
-            <h2 style={cardTitleStyle}>Ativar Novo Desafio</h2>
-            <form onSubmit={handleActivateChallenge}>
-                <div style={formGroupStyle}>
-                    <label>Tipo de Desafio</label>
-                    <select value={selectedTipo} onChange={e => setSelectedTipo(e.target.value)} style={inputStyle}>
-                        <option value="tema">Tema</option>
-                        <option value="subtema">Subtema</option>
-                    </select>
-                </div>
-                <div style={formGroupStyle}>
-                    <label>Valor</label>
-                    <select value={selectedValue} onChange={e => setSelectedValue(e.target.value)} style={inputStyle}>
-                        {optionsList.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                </div>
-                <button type="submit" style={{...submitButtonStyle, backgroundColor: '#007BFF'}}>Ativar Desafio</button>
-            </form>
         </div>
-      )}
-
-      <div style={cardStyle}>
-        <h2 style={cardTitleStyle}>Configurações Gerais</h2>
-        {configs && (
-          <>
-            <div style={configItemStyle}>
-              <span>Simulado Livre Ativado: <strong>{configs.simulado_livre_ativado ? '✅ Sim' : '❌ Não'}</strong></span>
-              <button onClick={() => handleToggle('simulado_livre_ativado')} style={buttonStyle}>Alternar</button>
-            </div>
-            <div style={configItemStyle}>
-              <span>Feedback Detalhado: <strong>{configs.feedback_detalhado_ativo ? '✅ Sim' : '❌ Não'}</strong></span>
-              <button onClick={() => handleToggle('feedback_detalhado_ativo')} style={buttonStyle}>Alternar</button>
-            </div>
-            <form onSubmit={handleSetNumPerguntas} style={configItemStyle}>
-              <label htmlFor="numPerguntas">Nº Máx. de Perguntas:</label>
-              <input 
-                type="number" 
-                id="numPerguntas" 
-                value={numPerguntas} 
-                onChange={(e) => setNumPerguntas(e.target.value)}
-                style={{...inputStyle, width: '60px', textAlign: 'center'}}
-              />
-              <button type="submit" style={buttonStyle}>Salvar</button>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
-  );
+    );
 }
 
-// Funções existentes que foram omitidas na resposta anterior por engano
-AdminPage.prototype.handleToggle = async function(key) {
-    this.setMessage(`Alterando ${key}...`);
-    try {
-      await api.post(`/admin/toggle_config/${key}`, { telegram_id: this.state.telegramId });
-      this.setMessage(`'${key}' alterado com sucesso!`);
-      this.fetchAllInitialData(this.state.telegramId);
-    } catch (err) {
-      this.setMessage(`Erro ao alterar '${key}'.`);
-      console.error(err);
-    }
-};
-AdminPage.prototype.handleSetNumPerguntas = async function(e) {
-    e.preventDefault();
-    this.setMessage('Salvando número de perguntas...');
-    try {
-        await api.post('/admin/set_config/num_max_perguntas_simulado', {
-            telegram_id: this.state.telegramId,
-            value: this.state.numPerguntas
-        });
-        this.setMessage('Número de perguntas salvo com sucesso!');
-        this.fetchAllInitialData(this.state.telegramId);
-    } catch (err) {
-        this.setMessage('Erro ao salvar número de perguntas.');
-        console.error(err);
-    }
-};
+function AdminPage() {
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [telegramId, setTelegramId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState('');
+    
+    const [challenges, setChallenges] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentChallenge, setCurrentChallenge] = useState(null);
+    const [formOptions, setFormOptions] = useState({ temas: [], subtemas: [], cargos: [], canais: [] });
 
-// Estilos
-const centeredTextStyle = { textAlign: 'center', fontSize: '18px', padding: '20px' };
-const backButtonStyle = { display: 'inline-block', marginBottom: '20px', textDecoration: 'none', color: '#007BFF', fontWeight: 'bold' };
-const cardStyle = { backgroundColor: '#fff', padding: '20px', margin: '15px 0', borderRadius: '8px', border: '1px solid #ddd', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
-const cardTitleStyle = { marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #007BFF', paddingBottom: '10px' };
-const configItemStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '16px', padding: '12px 0', borderBottom: '1px solid #eee' };
-const buttonStyle = { padding: '8px 12px', fontSize: '14px', cursor: 'pointer', border: '1px solid #007BFF', borderRadius: '5px', backgroundColor: 'white', color: '#007BFF', fontWeight: 'bold' };
-const inputStyle = { padding: '8px', fontSize: '14px', borderRadius: '5px', border: '1px solid #ccc', marginLeft: '10px' };
-const formGroupStyle = { display: 'flex', flexDirection: 'column', marginBottom: '15px' };
-const submitButtonStyle = { width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', marginTop: '10px' };
+    const fetchAllData = useCallback(async (id) => {
+        setLoading(true);
+        setMessage('');
+        try {
+            const [challengesRes, temasRes, subtemasRes, cargosRes, canaisRes] = await Promise.all([
+                api.get('/admin/challenges', { params: { telegram_id: id } }),
+                api.get('/admin/challenge_options', { params: { type: 'tema', telegram_id: id } }),
+                api.get('/admin/challenge_options', { params: { type: 'subtema', telegram_id: id } }),
+                api.get('/admin/challenge_options', { params: { type: 'cargo', telegram_id: id } }),
+                api.get('/admin/challenge_options', { params: { type: 'canal_principal', telegram_id: id } })
+            ]);
+            setChallenges(challengesRes.data);
+            setFormOptions({
+                temas: temasRes.data,
+                subtemas: subtemasRes.data,
+                cargos: cargosRes.data,
+                canais: canaisRes.data
+            });
+        } catch (err) {
+            setMessage('Erro ao carregar dados do admin.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
+    useEffect(() => {
+        const user = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (user && user.id.toString() === ADMIN_TELEGRAM_ID) {
+            setIsAuthorized(true);
+            const currentId = user.id.toString();
+            setTelegramId(currentId);
+            fetchAllData(currentId);
+        } else {
+            setLoading(false);
+        }
+    }, [fetchAllData]);
+
+    const handleOpenCreateModal = () => {
+        setCurrentChallenge(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (challenge) => {
+        setCurrentChallenge(challenge);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteChallenge = async (id) => {
+        if (window.confirm('Tem certeza que deseja excluir este desafio?')) {
+            setMessage('Excluindo...');
+            try {
+                await api.delete(`/admin/challenges/${id}`, { data: { telegram_id: telegramId } });
+                setMessage('Desafio excluído com sucesso!');
+                fetchAllData(telegramId);
+            } catch (err) {
+                setMessage('Erro ao excluir desafio.');
+                console.error(err);
+            }
+        }
+    };
+    
+    const handleFormSubmit = async (challengeData) => {
+        setMessage('Salvando desafio...');
+        const payload = { ...challengeData, telegram_id: telegramId };
+        const apiCall = challengeData.id 
+            ? api.put(`/admin/challenges/${challengeData.id}`, payload)
+            : api.post('/admin/challenges', payload);
+
+        try {
+            await apiCall;
+            setMessage('Desafio salvo com sucesso!');
+            setIsModalOpen(false);
+            fetchAllData(telegramId);
+        } catch (err) {
+            setMessage('Erro ao salvar desafio.');
+            console.error(err);
+        }
+    };
+
+    if (loading) return <p>Carregando painel de admin...</p>;
+    if (!isAuthorized) return <p style={{ color: 'red' }}>Acesso Negado.</p>;
+
+    return (
+        <div className={styles.screenContainer}>
+            <div className={styles.headerBar}>
+                <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
+                <h1 className={styles.screenTitle}>Painel de Admin</h1>
+            </div>
+
+            <div className={styles.contentArea}>
+                {message && <p className={styles.message}>{message}</p>}
+
+                <div className={styles.adminSection}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>Gerenciador de Desafios</h2>
+                        <button onClick={handleOpenCreateModal} className={styles.primaryButton}>
+                            Criar Novo Desafio
+                        </button>
+                    </div>
+                    <div className={styles.tableContainer}>
+                        <table className={styles.challengeTable}>
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Status</th>
+                                    <th>Nº Perguntas</th>
+                                    <th>Início</th>
+                                    <th>Fim</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {challenges.length > 0 ? challenges.map(c => (
+                                    <tr key={c.id}>
+                                        <td>{c.titulo}</td>
+                                        <td><span className={`${styles.statusBadge} ${styles[c.status]}`}>{c.status}</span></td>
+                                        <td>{c.num_perguntas}</td>
+                                        <td>{new Date(c.data_inicio).toLocaleString()}</td>
+                                        <td>{new Date(c.data_fim).toLocaleString()}</td>
+                                        <td className={styles.actionsCell}>
+                                            <button onClick={() => handleOpenEditModal(c)} className={styles.editButton}>Editar</button>
+                                            <button onClick={() => handleDeleteChallenge(c.id)} className={styles.deleteButton}>Excluir</button>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="6">Nenhum desafio criado.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {isModalOpen && (
+                <ChallengeFormModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    challenge={currentChallenge}
+                    onSubmit={handleFormSubmit}
+                    options={formOptions}
+                />
+            )}
+        </div>
+    );
+}
 
 export default AdminPage;

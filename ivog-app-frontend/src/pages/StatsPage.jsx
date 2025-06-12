@@ -51,8 +51,16 @@ function StatsPage() {
         setStatsData(statsResponse.data);
         setTgUser(userProfileResponse.data);
       } catch (err) {
-        setError('Não foi possível carregar os dados.');
-        console.error(err);
+        // --- BLOCO DE ERRO MELHORADO ---
+        console.error("Falha ao buscar dados para a página de estatísticas:", err);
+        if (err.response) {
+            // O servidor respondeu com um status de erro (4xx, 5xx)
+            console.error("Detalhes do erro:", err.response.data);
+            setError(`Erro ao carregar: ${err.response.data.error || 'Serviço indisponível'}`);
+        } else {
+            // Erro de rede ou outro problema
+            setError('Não foi possível carregar os dados. Verifique sua conexão.');
+        }
       } finally {
         setLoading(false);
       }

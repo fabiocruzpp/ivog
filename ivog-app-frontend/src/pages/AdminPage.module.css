@@ -1,6 +1,15 @@
 /* ================================== */
-/* ESTILOS DO HEADER         */
+/* ESTILOS DO HEADER E CONTEÚDO GERAL */
 /* ================================== */
+
+.screenContainer {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-background);
+}
+
 .headerBar {
     display: flex;
     align-items: center;
@@ -19,9 +28,6 @@
     padding: 8px;
     line-height: 0;
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .screenTitle {
@@ -30,14 +36,8 @@
     text-align: center;
     flex-grow: 1;
     margin: 0;
-    /* Ajuste para centralizar corretamente com o botão de voltar visível */
-    transform: translateX(-20px); 
+    padding-right: 40px; /* Compensa o botão de voltar */
 }
-
-
-/* ================================== */
-/* ESTILOS DO CONTEÚDO ADMIN     */
-/* ================================== */
 
 .contentArea {
     padding: 20px;
@@ -51,94 +51,212 @@
 .message {
     text-align: center;
     font-weight: bold;
-    min-height: 20px;
+    padding: 10px;
+    border-radius: 8px;
     color: var(--primary-dark-purple);
+    background-color: var(--primary-light-purple);
     transition: opacity 0.3s;
-    padding: 0 20px;
 }
+
+/* ================================== */
+/* ESTILOS DAS SEÇÕES ADMIN       */
+/* ================================== */
 
 .adminSection {
     background-color: var(--secondary-white);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.sectionTitle {
-    margin-top: 0;
-    text-align: left;
-    border-bottom: 1px solid var(--primary-light-purple);
-    padding-bottom: 8px;
-    margin-bottom: 15px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--primary-dark-black);
-}
-
-.configItem {
+.sectionHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-.configItem:last-child {
-    margin-bottom: 0;
+    border-bottom: 1px solid var(--primary-light-purple);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
 }
 
-.configItem label {
-    margin-bottom: 5px;
-    color: var(--primary-dark-black);
-    font-weight: 500;
-}
-
-.actionButton {
-    padding: 8px 15px;
-    font-size: 14px;
+.sectionTitle {
+    margin: 0;
+    font-size: 18px;
     font-weight: 600;
-    min-width: 100px;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 28px;
-    border: none;
-    transition: background-color 0.2s, transform 0.1s;
+    color: var(--primary-dark-black);
 }
 
 .primaryButton {
     background-color: var(--primary-dark-purple);
     color: var(--secondary-white);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.primaryButton:hover {
+    background-color: #5a28a0;
 }
 
 .secondaryButton {
-    background-color: var(--secondary-white);
-    color: var(--primary-dark-purple);
-    border: 1.5px solid var(--primary-dark-purple);
+    background-color: var(--secondary-soft-grey);
+    color: var(--primary-dark-black);
+    padding: 8px 16px;
+    border: 1px solid var(--secondary-dark-grey);
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.secondaryButton:hover {
+    background-color: #e0e0e0;
 }
 
-.fullWidthButton {
+/* ================================== */
+/* ESTILOS DA TABELA DE DESAFIOS    */
+/* ================================== */
+
+.tableContainer {
     width: 100%;
-    margin-top: 10px;
+    overflow-x: auto;
 }
 
-.deactivateButton {
-    background-color: var(--feedback-incorrect-border);
+.challengeTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.challengeTable th,
+.challengeTable td {
+    text-align: left;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--primary-light-purple);
+}
+
+.challengeTable th {
+    font-weight: 600;
+    color: var(--primary-dark-purple);
+}
+
+.challengeTable tbody tr:hover {
+    background-color: var(--primary-background);
+}
+
+.actionsCell {
+    display: flex;
+    gap: 8px;
+}
+
+.editButton, .deleteButton {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.editButton {
+    background-color: var(--secondary-soft-grey);
+    color: var(--primary-dark-black);
+}
+
+.deleteButton {
+    background-color: #FDDDE1;
+    color: #A42832;
+}
+
+.statusBadge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
     color: white;
 }
+.statusBadge.ativo { background-color: #28a745; }
+.statusBadge.inativo { background-color: #ffc107; color: var(--primary-dark-black)}
+.statusBadge.arquivado { background-color: #6c757d; }
 
-.formInput,
-.formSelect {
-    padding: 8px 12px;
-    font-size: 14px;
-    border-radius: 5px;
-    border: 1.5px solid var(--secondary-dark-grey);
-    background-color: var(--secondary-white);
+
+/* ================================== */
+/* ESTILOS DO MODAL E FORMULÁRIO    */
+/* ================================== */
+
+.modalBackdrop {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
-.statusText {
-    font-size: 14px;
-    margin-bottom: 15px;
+.modalContent {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-.statusText strong {
-    color: var(--primary-dark-purple);
+.modalContent h2 {
+    margin-top: 0;
+}
+
+.challengeForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.formGroup label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--primary-dark-black);
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--secondary-dark-grey);
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.formGroup textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.multiSelect {
+    min-height: 100px;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
 }

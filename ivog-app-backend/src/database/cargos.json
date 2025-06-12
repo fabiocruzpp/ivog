@@ -1,0 +1,29 @@
+{
+  "Loja Propria": [
+    "GG",
+    "GO",
+    "CN",
+    "Guru"
+  ],
+  "Parceiros": {
+    "Parceiro Lojas": [
+      "GG",
+      "CN"
+    ],
+    "PAP": [
+      "Vendedor",
+      "Supervisor"
+    ],
+    "GA": [
+      "GA"
+    ],
+    "GA Multicanal": [
+      "GA Multicanal"
+    ]
+  },
+  "Distribuição": [
+    "Gerente",
+    "Vendedor",
+    "Supervisor"
+  ]
+}

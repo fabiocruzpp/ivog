@@ -33,6 +33,7 @@ function Dashboard() {
         
         {/* Note como usamos className e o objeto styles */}
         <Link to="/quiz" className={`${styles.actionButton} ${styles.primaryButton}`}>🚀 Iniciar Simulado</Link>
+        <Link to="/challenges" className={`${styles.actionButton} ${styles.challengeButton}`}>🔥 Meus Desafios</Link>
         <Link to="/stats" className={`${styles.actionButton} ${styles.secondaryButton}`}>📊 Minhas Estatísticas</Link>
         <Link to="/profile" className={`${styles.actionButton} ${styles.secondaryButton}`}>👤 Atualizar Dados</Link>
         <Link to="/ranking" className={`${styles.actionButton} ${styles.secondaryButton}`}>🏆 TOP10</Link>

@@ -53,8 +53,17 @@ const initializeDb = () => {
         status TEXT NOT NULL DEFAULT 'ativo'
       )
     `, (err) => {
-      if (err) console.error("Erro ao criar tabela 'desafios':", err.message);
+      if (err) console.error("Erro ao criar/alterar tabela 'desafios':", err.message);
       else console.log("Tabela 'desafios' verificada/criada.");
+    });
+    
+    // --- GARANTE QUE A COLUNA num_perguntas EXISTE ---
+    db.run("ALTER TABLE desafios ADD COLUMN num_perguntas INTEGER DEFAULT 10", (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+            console.error("Erro ao adicionar coluna 'num_perguntas':", err.message);
+        } else {
+            console.log("Coluna 'num_perguntas' na tabela 'desafios' verificada/criada.");
+        }
     });
 
     db.run(`
@@ -69,6 +78,11 @@ const initializeDb = () => {
       if (err) console.error("Erro ao criar tabela 'desafio_filtros':", err.message);
       else console.log("Tabela 'desafio_filtros' verificada/criada.");
     });
+
+    db.run("CREATE INDEX IF NOT EXISTS idx_respostas_telegram ON respostas_simulado (telegram_id);");
+    db.run("CREATE INDEX IF NOT EXISTS idx_simulados_telegram ON simulados (telegram_id);");
+    db.run("CREATE INDEX IF NOT EXISTS idx_resultados_telegram ON resultados (telegram_id);");
+    console.log("Índices de performance verificados/criados.");
 
     seedInitialConfigs();
   });

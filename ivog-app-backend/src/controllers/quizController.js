@@ -3,39 +3,79 @@ import { promisify } from 'util';
 import { loadAllQuestions } from '../services/quizService.js';
 
 const dbGet = promisify(db.get.bind(db));
+const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
 export const startQuizController = async (req, res) => {
   try {
-    const { telegram_id, cargo, canal_principal } = req.query;
+    const { telegram_id, cargo, canal_principal, desafio_id } = req.query;
     if (!telegram_id || !cargo || !canal_principal) return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes.' });
 
     const allQuestions = await loadAllQuestions();
-    
-    const userFilteredQuestions = allQuestions.filter(q => 
-        (q.canal.length === 0 || q.canal.includes(canal_principal)) && 
-        (q.publico.length === 0 || q.publico.includes(cargo))
-    );
+    let quizQuestions = [];
+    let contextoDesafio = null;
 
-    if (userFilteredQuestions.length === 0) return res.status(404).json({ message: "Não há perguntas disponíveis para seu perfil." });
+    if (desafio_id) {
+      contextoDesafio = `desafio_id:${desafio_id}`;
 
-    const quizQuestions = userFilteredQuestions.sort(() => 0.5 - Math.random()).slice(0, 20);
+      const challenge = await dbGet("SELECT * FROM desafios WHERE id = ?", [desafio_id]);
+      if (!challenge) {
+        return res.status(404).json({ message: "Desafio não encontrado." });
+      }
+
+      const challengeFilters = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio_id]);
+      if (challengeFilters.length === 0) {
+        return res.status(404).json({ message: "Desafio inválido ou sem filtros de conteúdo." });
+      }
+      
+      const temaFiltro = challengeFilters.find(f => f.tipo_filtro === 'tema')?.valor_filtro;
+      const subtemaFiltro = challengeFilters.find(f => f.tipo_filtro === 'subtema')?.valor_filtro;
+
+      let filteredQuestions = allQuestions;
+
+      if (temaFiltro) {
+        filteredQuestions = filteredQuestions.filter(q => q.tema === temaFiltro);
+      }
+      if (subtemaFiltro) {
+        filteredQuestions = filteredQuestions.filter(q => q.subtema === subtemaFiltro);
+      }
+
+      quizQuestions = filteredQuestions
+        .sort(() => 0.5 - Math.random())
+        .slice(0, challenge.num_perguntas);
+
+    } else {
+      const userFilteredQuestions = allQuestions.filter(q => 
+          (q.canal.length === 0 || q.canal.includes(canal_principal)) && 
+          (q.publico.length === 0 || q.publico.includes(cargo))
+      );
+
+      if (userFilteredQuestions.length === 0) return res.status(404).json({ message: "Não há perguntas disponíveis para seu perfil." });
+      
+      quizQuestions = userFilteredQuestions.sort(() => 0.5 - Math.random()).slice(0, 20);
+    }
+
+    if (quizQuestions.length === 0) {
+        return res.status(404).json({ message: "Nenhuma pergunta encontrada para este desafio." });
+    }
 
     const dataInicio = new Date().toISOString();
     const result = await new Promise((resolve, reject) => {
         db.run(`INSERT INTO simulados (telegram_id, data_inicio, contexto_desafio) VALUES (?, ?, ?)`,
-            [telegram_id, dataInicio, null], function(err) {
+            [telegram_id, dataInicio, contextoDesafio], function(err) {
             if (err) reject(err); else resolve({ lastID: this.lastID });
         });
     });
-    const simulado = await dbGet('SELECT id_simulado FROM simulados WHERE rowid = ?', [result.lastID]);
+
+    const simuladoId = result.lastID;
 
     res.json({
-      simulado_id: simulado.id_simulado,
+      simulado_id: simuladoId,
       total_perguntas_no_simulado: quizQuestions.length,
       questions: quizQuestions,
     });
   } catch (error) {
+    console.error("Erro ao iniciar quiz:", error);
     res.status(500).json({ error: 'Erro interno do servidor ao iniciar quiz.' });
   }
 };

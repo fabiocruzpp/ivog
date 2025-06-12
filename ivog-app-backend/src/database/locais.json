@@ -1,0 +1,793 @@
+[
+  {
+    "ddd": "91",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Castanheira"
+  },
+  {
+    "ddd": "91",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Pátio"
+  },
+  {
+    "ddd": "91",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Grão Pará"
+  },
+  {
+    "ddd": "91",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Boulevard"
+  },
+  {
+    "ddd": "92",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Amazonas Shopping"
+  },
+  {
+    "ddd": "92",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Manauara Shopping"
+  },
+  {
+    "ddd": "92",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Marcílio Dias"
+  },
+  {
+    "ddd": "92",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Ponta Nega"
+  },
+  {
+    "ddd": "93",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Santarém"
+  },
+  {
+    "ddd": "94",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Redenção"
+  },
+  {
+    "ddd": "94",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Marabá"
+  },
+  {
+    "ddd": "95",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Boa Vista"
+  },
+  {
+    "ddd": "96",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Macapá Shopping"
+  },
+  {
+    "ddd": "98",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Rio Anil"
+  },
+  {
+    "ddd": "98",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja São Luís"
+  },
+  {
+    "ddd": "98",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Sede Colares Moreira"
+  },
+  {
+    "ddd": "98",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Shopping da Ilha"
+  },
+  {
+    "ddd": "98",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Golden Shopping"
+  },
+  {
+    "ddd": "99",
+    "canal": "Loja Propria",
+    "tipo_parceiro": null,
+    "rede": null,
+    "loja": "Loja Imperatriz"
+  },
+  {
+    "ddd": "91",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "92",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "RV",
+    "loja": null
+  },
+  {
+    "ddd": "93",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "94",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "95",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "96",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "97",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "Redeflex",
+    "loja": null
+  },
+  {
+    "ddd": "98",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "RV",
+    "loja": null
+  },
+  {
+    "ddd": "99",
+    "canal": "Distribuição",
+    "tipo_parceiro": null,
+    "rede": "RV",
+    "loja": null
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING SUMAUMA)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING MILLENIUM)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING GRANDE CIRCULAR)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING VIA NORTE)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (PONTA NEGRA)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING PATIO NORTE)"
+  },
+  {
+    "ddd": "96",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VILLA TECH",
+    "loja": "VILLA TECH (SANTANA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (PARTAGE SHOPPING PARAUAPEBAS)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING METROPOLE)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING BOULEVARD BELEM)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (PARQUE SHOPPING)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (PARAUAPEBAS RUA)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (PINHEIRO)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (CHAPADINHA)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (SAO LUIS)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (VARGEM GRANDE)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (CIDADE OPERARIA)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (ALENQUER)"
+  },
+  {
+    "ddd": "96",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VILLA TECH",
+    "loja": "VILLA TECH (ZONA NORTE)"
+  },
+  {
+    "ddd": "96",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VILLA TECH",
+    "loja": "VILLA TECH (CENTRO)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (ABAETETUBA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (CAMETA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (BREVES)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (IGARAPE-MIRI)"
+  },
+  {
+    "ddd": "96",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VILLA TECH",
+    "loja": "VILLA TECH (LARANJAL DO JARI/AP-CENTRO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (BERNARDO SAYAO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (IMPERIAL SHOPPING)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (ACAILANDIA)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (GRAJAU)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (ESTREITO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (PRESIDENTE DUTRA)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (BALSAS)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (SANTA INES)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (SAO LUIS)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (BARREIRINHAS)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (SHOPPING PASSEIO)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "F5 CELULARES",
+    "loja": "F5 CELULARES (SAO LUIS)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (TURU)"
+  },
+  {
+    "ddd": "98",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (SANTA INES)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (BACABAL)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (XINGUARA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (CASTANHAL)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (CAPANEMA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (PARAGOMINAS)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (OBIDOS)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (MONTE ALEGRE)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (ORIXIMINA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (TUCURUI)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (SANTAREM)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (ITAITUBA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (REDENCAO)"
+  },
+  {
+    "ddd": "95",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (SAO FRANCISCO)"
+  },
+  {
+    "ddd": "95",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (PATIO RORAIMA)"
+  },
+  {
+    "ddd": "95",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (ATAIDE TEIVE)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (MARABA)"
+  },
+  {
+    "ddd": "95",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (CENTRO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (TUNTUM)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (ITUPIRANGA)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (EDUARDO RIBEIRO)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "CENTRAO TELECOM",
+    "loja": "CENTRAO (SHOPPING PATIO MARABA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (CANAA DOS CARAJAS)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (PARAUAPEBAS)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "FUTURA",
+    "loja": "FUTURA (ALTAMIRA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "PRESENTES E DECORACOES",
+    "loja": "PRESENTES E DECORACOES (CONCEICAO DO ARAGUAIA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "4 R TELECOM",
+    "loja": "4 REDES (CANAA DOS CARAJAS AV DOS PIONEIROS)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (CAXIAS)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (SAO DOMINGOS DO MARANHAO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (PEDREIRAS)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (ITINGA DO MARANHAO)"
+  },
+  {
+    "ddd": "99",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (IMPERATRIZ)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "COMPACT TELECOM",
+    "loja": "COMPACT TELECOM (DOM ELISEU)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (DOUTOR MOREIRA)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (MANACAPURU)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (PLAZA SHOPPING)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (UAI SHOPPING)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (PARINTINS)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (SHOP DB NOVA CIDADE)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (COLONIA TERRA NOVA)"
+  },
+  {
+    "ddd": "92",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "SUPREMA TECNOLOGIA",
+    "loja": "SUPREMA (SHOPPING CIDADE LESTE)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (BARCARENA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (IT CENTER)"
+  },
+  {
+    "ddd": "93",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (ALTAMIRA)"
+  },
+  {
+    "ddd": "91",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "MASTERCELL_MT",
+    "loja": "MASTERCELL (TAILANDIA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VITOCELL",
+    "loja": "VITOCELL (TUCUMA)"
+  },
+  {
+    "ddd": "94",
+    "canal": "Parceiros",
+    "tipo_parceiro": "Parceiro Lojas",
+    "rede": "VITOCELL",
+    "loja": "VITOCELL (OURILANDIA)"
+  }
+]
