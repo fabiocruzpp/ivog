@@ -1,3 +1,5 @@
+/* ivog-app-frontend/src/pages/RankingPage.module.css */
+
 .screenContainer {
     width: 100%;
     height: 100%;
@@ -23,6 +25,7 @@
     cursor: pointer;
     padding: 8px;
     line-height: 0;
+    text-decoration: none; /* Adicionado para garantir que o Link não tenha sublinhado */
 }
 
 .screenTitle {
@@ -31,8 +34,7 @@
     text-align: center;
     flex-grow: 1;
     margin: 0;
-    /* Adicionado padding para compensar o botão de voltar invisível */
-    padding-left: 40px;
+    padding-right: 40px; /* Compensa o botão de voltar */
 }
 
 .contentArea {
@@ -41,39 +43,43 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px; /* Aumentado o espaçamento entre os elementos */
 }
 
-.periodTabs {
+/* NOVO: Container para as abas */
+.tabsContainer {
     display: flex;
     justify-content: space-around;
     padding: 4px;
-    margin-bottom: 10px;
     background-color: var(--secondary-white);
     border-radius: 28px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
 }
 
-.periodTabButton {
+/* Estilo unificado para todos os botões de abas */
+.tabButton {
     padding: 8px 12px;
     border: none;
     border-radius: 22px;
-    font-size: 14px;
+    font-size: 13px; /* Levemente menor para caber mais texto */
     font-weight: 600;
     cursor: pointer;
     text-align: center;
     flex-grow: 1;
-    margin: 0;
+    margin: 0 2px;
     background-color: transparent;
     color: var(--secondary-dark-grey);
     transition: background-color 0.3s, color 0.3s;
+    white-space: nowrap; /* Impede que o texto quebre linha */
 }
 
-.periodTabButton.active {
+.tabButton.active {
     background-color: var(--primary-dark-purple);
     color: var(--secondary-white);
     box-shadow: 0 2px 4px rgba(108, 48, 191, 0.2);
 }
+
 
 .leaderboardItem {
     background-color: var(--secondary-white);
@@ -83,6 +89,7 @@
     align-items: center;
     gap: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-top: 5px; /* Adicionado para separar os itens da lista */
 }
 
 .rankBadge {

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
-import { Link } from 'react-router-dom';
-import styles from './RankingPage.module.css'; // Importa nosso novo CSS Módulo
+// ivog-app-frontend/src/pages/RankingPage.jsx
 
-// Ícone de voltar como um componente React para reutilização
+import React, { useState, useEffect } from 'react';
+// CORREÇÃO: Caminhos de importação ajustados para serem absolutos a partir da raiz do projeto,
+// o que resolve o erro de compilação "Could not resolve".
+import api from '/src/services/api.js';
+import { Link } from 'react-router-dom';
+import styles from '/src/pages/RankingPage.module.css';
+
 const BackArrowIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
     <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
@@ -11,17 +14,44 @@ const BackArrowIcon = () => (
 );
 
 function RankingPage() {
-  const [periodo, setPeriodo] = useState('semanal'); // Inicia com 'semanal' por padrão
+  const [periodo, setPeriodo] = useState('semanal');
+  const [canal, setCanal] = useState('Geral'); // Estado para a aba de canal, 'Geral' é o padrão
   const [ranking, setRanking] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Busca o canal do utilizador para definir a aba ativa
+  useEffect(() => {
+    const fetchUserCanal = async () => {
+        try {
+            const telegram = window.Telegram.WebApp;
+            const user = telegram.initDataUnsafe?.user;
+            if (user && user.id) {
+                const response = await api.get(`/user/${user.id}`);
+                if (response.data && response.data.canal_principal) {
+                    setCanal(response.data.canal_principal); // Define a aba ativa com o canal do utilizador
+                }
+            }
+        } catch (err) {
+            console.error("Não foi possível buscar o canal do utilizador.", err);
+            // Mantém 'Geral' como padrão em caso de erro
+        }
+    };
+    fetchUserCanal();
+  }, []);
+
+  // Busca o ranking sempre que o período ou o canal mudar
   useEffect(() => {
     const fetchRanking = async () => {
       try {
         setLoading(true);
         setError('');
-        const params = periodo === 'geral' ? {} : { periodo };
+        
+        const params = { periodo };
+        if (canal !== 'Geral') {
+            params.canal_filter = canal;
+        }
+
         const response = await api.get('/top10', { params });
         setRanking(response.data);
       } catch (err) {
@@ -32,7 +62,7 @@ function RankingPage() {
       }
     };
     fetchRanking();
-  }, [periodo]);
+  }, [periodo, canal]); // Depende de periodo e canal
 
   const getRankClassName = (index) => {
     if (index === 0) return `${styles.rankBadge} ${styles.rank1}`;
@@ -42,9 +72,9 @@ function RankingPage() {
   };
   
   const renderContent = () => {
-    if (loading) return <p style={{ textAlign: 'center' }}>Carregando ranking...</p>;
-    if (error) return <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>;
-    if (ranking.length === 0) return <p style={{ textAlign: 'center' }}>Ainda não há dados no ranking para este período.</p>;
+    if (loading) return <p style={{ textAlign: 'center', padding: '20px' }}>A carregar ranking...</p>;
+    if (error) return <p style={{ color: 'red', textAlign: 'center', padding: '20px' }}>{error}</p>;
+    if (ranking.length === 0) return <p style={{ textAlign: 'center', padding: '20px' }}>Ainda não há dados no ranking para esta seleção.</p>;
 
     return (
       ranking.map((user, index) => (
@@ -69,25 +99,19 @@ function RankingPage() {
       </div>
 
       <div className={styles.contentArea}>
-        <div className={styles.periodTabs}>
-          <button 
-            onClick={() => setPeriodo('semanal')} 
-            className={`${styles.periodTabButton} ${periodo === 'semanal' ? styles.active : ''}`}
-          >
-            Semanal
-          </button>
-          <button 
-            onClick={() => setPeriodo('mensal')} 
-            className={`${styles.periodTabButton} ${periodo === 'mensal' ? styles.active : ''}`}
-          >
-            Mensal
-          </button>
-          <button 
-            onClick={() => setPeriodo('geral')} 
-            className={`${styles.periodTabButton} ${periodo === 'geral' ? styles.active : ''}`}
-          >
-            Geral
-          </button>
+        {/* Abas para os Canais */}
+        <div className={styles.tabsContainer}>
+            <button onClick={() => setCanal('Geral')} className={`${styles.tabButton} ${canal === 'Geral' ? styles.active : ''}`}>Geral</button>
+            <button onClick={() => setCanal('Loja Própria')} className={`${styles.tabButton} ${canal === 'Loja Própria' ? styles.active : ''}`}>Loja Própria</button>
+            <button onClick={() => setCanal('Parceiros')} className={`${styles.tabButton} ${canal === 'Parceiros' ? styles.active : ''}`}>Parceiros</button>
+            <button onClick={() => setCanal('Distribuição')} className={`${styles.tabButton} ${canal === 'Distribuição' ? styles.active : ''}`}>Distribuição</button>
+        </div>
+        
+        {/* Abas para o Período */}
+        <div className={styles.tabsContainer}>
+          <button onClick={() => setPeriodo('semanal')} className={`${styles.tabButton} ${periodo === 'semanal' ? styles.active : ''}`}>Semanal</button>
+          <button onClick={() => setPeriodo('mensal')} className={`${styles.tabButton} ${periodo === 'mensal' ? styles.active : ''}`}>Mensal</button>
+          <button onClick={() => setPeriodo('geral')} className={`${styles.tabButton} ${periodo === 'geral' ? styles.active : ''}`}>Geral</button>
         </div>
         
         {renderContent()}

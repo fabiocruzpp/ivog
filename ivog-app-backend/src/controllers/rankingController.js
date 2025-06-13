@@ -1,3 +1,5 @@
+// ivog-app-backend/src/controllers/rankingController.js
+
 import db from '../database/database.js';
 import { promisify } from 'util';
 
@@ -5,8 +7,8 @@ const dbAll = promisify(db.all.bind(db));
 
 export const getTop10Controller = async (req, res) => {
   try {
-    // 1. Extrai filtros da query string
-    const { periodo, ddd_filter, canal_filter, rede_filter, loja_filter } = req.query;
+    // 1. Extrai filtros da query string, incluindo o novo 'canal_filter'
+    const { periodo, canal_filter } = req.query;
     const limite = 10;
 
     // 2. Monta filtros de período para a consulta
@@ -63,21 +65,10 @@ export const getTop10Controller = async (req, res) => {
     const whereClauses = [];
     const params = [];
 
-    if (ddd_filter) {
-      whereClauses.push("u.ddd = ?");
-      params.push(ddd_filter);
-    }
-    if (canal_filter) {
+    // Adiciona o novo filtro de canal à consulta
+    if (canal_filter && canal_filter !== 'Geral') {
       whereClauses.push("u.canal_principal = ?");
       params.push(canal_filter);
-    }
-    if (rede_filter) {
-      whereClauses.push("u.rede_parceiro = ?");
-      params.push(rede_filter);
-    }
-    if (loja_filter) {
-      whereClauses.push("u.loja_revenda = ?");
-      params.push(loja_filter);
     }
     
     let finalSql = baseSql;
@@ -97,7 +88,7 @@ export const getTop10Controller = async (req, res) => {
     res.status(200).json(topUsers);
 
   } catch (error) {
-    console.error("Erro ao buscar o ranking:", error); // Adicionado para melhor log de erros
+    console.error("Erro ao buscar o ranking:", error);
     res.status(500).json({ error: "Erro interno do servidor ao buscar ranking." });
   }
 };
