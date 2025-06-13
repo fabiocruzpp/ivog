@@ -1,8 +1,6 @@
 // ivog-app-frontend/src/pages/RegisterPage.jsx
 
 import React, { useState, useEffect } from 'react';
-// CORREÇÃO: Caminhos de importação ajustados para serem absolutos a partir da raiz do projeto,
-// o que resolve o erro de compilação "Could not resolve".
 import api from '/src/services/api.js';
 import { useNavigate } from 'react-router-dom';
 import styles from '/src/pages/RegisterPage.module.css';
@@ -83,7 +81,7 @@ function RegisterPage() {
         const { ddd, canal_principal } = formData;
         if (canal_principal === 'Parceiros') {
             api.get(`/options/tipos-parceiro?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, tiposParceiro: res.data })));
-        } else if (canal_principal === 'Loja Propria') {
+        } else if (canal_principal === 'Loja Própria') {
              api.get(`/options/lojas?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, lojas: res.data })));
         } else if (canal_principal === 'Distribuição') {
             api.get(`/options/redes?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, redes: res.data })));
@@ -143,7 +141,7 @@ function RegisterPage() {
     
     // Lógica de renderização condicional
     const showRede = (formData.canal_principal === 'Distribuição' || formData.tipo_parceiro === 'Parceiro Lojas') && options.redes.length > 0;
-    const showLoja = (formData.canal_principal === 'Loja Propria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
+    const showLoja = (formData.canal_principal === 'Loja Própria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
     const showCargo = options.cargos.length > 0;
 
     return (

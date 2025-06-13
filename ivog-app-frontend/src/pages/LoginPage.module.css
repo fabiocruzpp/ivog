@@ -1,0 +1,87 @@
+.loginContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    background-color: var(--primary-background);
+}
+
+.loginBox {
+    width: 100%;
+    max-width: 360px;
+    padding: 40px;
+    background-color: var(--secondary-white);
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.loginBox h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--primary-dark-purple);
+    font-size: 24px;
+}
+
+.loginBox p {
+    margin-bottom: 25px;
+    color: var(--secondary-dark-grey);
+    font-size: 14px;
+}
+
+.formGroup {
+    text-align: left;
+    margin-bottom: 15px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary-dark-black);
+}
+
+.formGroup input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--secondary-dark-grey);
+}
+
+.formGroup input:focus {
+    border-color: var(--primary-purple);
+    outline: none;
+}
+
+.errorMessage {
+    color: var(--feedback-incorrect-text);
+    font-size: 13px;
+    margin-top: -10px;
+    margin-bottom: 15px;
+}
+
+.loginButton {
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 28px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.loginButton:disabled {
+    background-color: var(--secondary-dark-grey);
+    cursor: not-allowed;
+}
+
+.loginButton:hover:not(:disabled) {
+    background-color: #5a28a0;
+}

@@ -70,7 +70,7 @@ export const getRedes = (ddd, canal, tipoParceiro) => {
 };
 
 export const getLojas = (ddd, canal, rede) => {
-    const filterFn = canal === 'Loja Propria'
+    const filterFn = canal === 'Loja Própria'
         ? item => item.ddd === ddd && item.canal === canal
         : item => item.ddd === ddd && item.canal === canal && item.rede === rede;
         

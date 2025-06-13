@@ -3,10 +3,8 @@ import api from '../services/api';
 import { Link } from 'react-router-dom';
 import styles from './AdminPage.module.css';
 
-const ADMIN_TELEGRAM_ID = '1318210843';
-
 const BackArrowIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
 );
 
 const getInitialFormData = () => ({
@@ -18,7 +16,7 @@ const getInitialFormData = () => ({
     status: 'ativo',
     num_perguntas: 10,
     publico_alvo: { canal_principal: [], cargo: [] },
-    filtros: { tema: '', subtema: '' }, // Agora é um objeto para facilitar
+    filtros: { tema: '', subtema: '' },
 });
 
 function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
@@ -160,26 +158,38 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
 }
 
 function AdminPage() {
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [telegramId, setTelegramId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
-    
     const [challenges, setChallenges] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentChallenge, setCurrentChallenge] = useState(null);
     const [formOptions, setFormOptions] = useState({ temas: [], subtemas: [], cargos: [], canais: [] });
+    const [telegramId, setTelegramId] = useState(null);
 
-    const fetchAllData = useCallback(async (id) => {
-        setLoading(true);
+    useEffect(() => {
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (user && user.id) {
+            setTelegramId(user.id.toString());
+        }
+    }, []);
+
+    const fetchAllData = useCallback(async () => {
+        const isWeb = !window.Telegram?.WebApp?.initData;
+        // CORREÇÃO: Não executa a busca se estiver no Telegram e o ID ainda não foi carregado.
+        if (!isWeb && !telegramId) {
+            return;
+        }
+
         setMessage('');
         try {
+            const params = telegramId ? { telegram_id: telegramId } : {};
+
             const [challengesRes, temasRes, subtemasRes, cargosRes, canaisRes] = await Promise.all([
-                api.get('/admin/challenges', { params: { telegram_id: id } }),
-                api.get('/admin/challenge_options', { params: { type: 'tema', telegram_id: id } }),
-                api.get('/admin/challenge_options', { params: { type: 'subtema', telegram_id: id } }),
-                api.get('/admin/challenge_options', { params: { type: 'cargo', telegram_id: id } }),
-                api.get('/admin/challenge_options', { params: { type: 'canal_principal', telegram_id: id } })
+                api.get('/admin/challenges', { params }),
+                api.get('/admin/challenge_options', { params: { ...params, type: 'tema' } }),
+                api.get('/admin/challenge_options', { params: { ...params, type: 'subtema' } }),
+                api.get('/admin/challenge_options', { params: { ...params, type: 'cargo' } }),
+                api.get('/admin/challenge_options', { params: { ...params, type: 'canal_principal' } })
             ]);
             setChallenges(challengesRes.data);
             setFormOptions({
@@ -194,18 +204,10 @@ function AdminPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [telegramId]);
 
     useEffect(() => {
-        const user = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (user && user.id.toString() === ADMIN_TELEGRAM_ID) {
-            setIsAuthorized(true);
-            const currentId = user.id.toString();
-            setTelegramId(currentId);
-            fetchAllData(currentId);
-        } else {
-            setLoading(false);
-        }
+        fetchAllData();
     }, [fetchAllData]);
 
     const handleOpenCreateModal = () => {
@@ -224,7 +226,7 @@ function AdminPage() {
             try {
                 await api.delete(`/admin/challenges/${id}`, { data: { telegram_id: telegramId } });
                 setMessage('Desafio excluído com sucesso!');
-                fetchAllData(telegramId);
+                fetchAllData();
             } catch (err) {
                 setMessage('Erro ao excluir desafio.');
                 console.error(err);
@@ -243,7 +245,7 @@ function AdminPage() {
             await apiCall;
             setMessage('Desafio salvo com sucesso!');
             setIsModalOpen(false);
-            fetchAllData(telegramId);
+            fetchAllData();
         } catch (err) {
             setMessage('Erro ao salvar desafio.');
             console.error(err);
@@ -251,7 +253,6 @@ function AdminPage() {
     };
 
     if (loading) return <p>Carregando painel de admin...</p>;
-    if (!isAuthorized) return <p style={{ color: 'red' }}>Acesso Negado.</p>;
 
     return (
         <div className={styles.screenContainer}>
@@ -262,8 +263,7 @@ function AdminPage() {
 
             <div className={styles.contentArea}>
                 {message && <p className={styles.message}>{message}</p>}
-                
-                {/* NOVA SEÇÃO PARA GERENCIAR PERGUNTAS */}
+
                 <div className={styles.adminSection}>
                     <div className={styles.sectionHeader}>
                         <h2 className={styles.sectionTitle}>Base de Conhecimento</h2>

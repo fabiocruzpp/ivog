@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import styles from './ProfilePage.module.css';
 
 const BackArrowIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
 );
 
 // Componentes auxiliares do formulário
@@ -97,7 +97,7 @@ function ProfilePage() {
         const { ddd, canal_principal } = formData;
         if (canal_principal === 'Parceiros') {
             api.get(`/options/tipos-parceiro?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, tiposParceiro: res.data })));
-        } else if (canal_principal === 'Loja Propria') {
+        } else if (canal_principal === 'Loja Própria') {
              api.get(`/options/lojas?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, lojas: res.data })));
         } else if (canal_principal === 'Distribuição') {
             api.get(`/options/redes?ddd=${ddd}&canal=${canal_principal}`).then(res => setOptions(prev => ({ ...prev, redes: res.data })));
@@ -146,7 +146,7 @@ function ProfilePage() {
     if (loading) return <p style={{ textAlign: 'center' }}>A carregar perfil...</p>;
     
     const showRede = (formData.canal_principal === 'Distribuição' || formData.tipo_parceiro === 'Parceiro Lojas') && options.redes.length > 0;
-    const showLoja = (formData.canal_principal === 'Loja Propria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
+    const showLoja = (formData.canal_principal === 'Loja Própria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
     const showCargo = options.cargos.length > 0;
 
     return (

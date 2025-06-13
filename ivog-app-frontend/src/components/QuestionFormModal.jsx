@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import styles from './QuestionFormModal.module.css';
 
 const getInitialFormData = () => ({
     pergunta_formatada_display: '',
-    alternativas: ['', '', '', ''],
+    alternativas: ['', ''],
     correta: '',
     tema: '',
     subtema: '',
@@ -13,16 +14,39 @@ const getInitialFormData = () => ({
     fonte: ''
 });
 
-function QuestionFormModal({ isOpen, onClose, onSubmit, question }) {
+function QuestionFormModal({ isOpen, onClose, onSubmit, question, telegramId }) {
     const [formData, setFormData] = useState(getInitialFormData());
+    const [options, setOptions] = useState({ canais: [], cargos: [] });
+
+    useEffect(() => {
+        if (isOpen) {
+            const fetchOptions = async () => {
+                try {
+                    // CORREÇÃO: Adiciona o telegram_id (se existir) aos parâmetros da requisição
+                    const params = telegramId ? { telegram_id: telegramId } : {};
+                    
+                    const [canaisRes, cargosRes] = await Promise.all([
+                        api.get('/admin/challenge_options', { params: { ...params, type: 'canal_principal' } }),
+                        api.get('/admin/challenge_options', { params: { ...params, type: 'cargo' } })
+                    ]);
+                    setOptions({
+                        canais: canaisRes.data,
+                        cargos: cargosRes.data
+                    });
+                } catch (error) {
+                    console.error("Falha ao carregar opções para o formulário de perguntas", error);
+                }
+            };
+            fetchOptions();
+        }
+    }, [isOpen, telegramId]); // Adiciona telegramId à lista de dependências
 
     useEffect(() => {
         if (isOpen) {
             if (question) {
-                // Preenche o formulário com os dados da pergunta para edição
                 setFormData({
                     pergunta_formatada_display: question.pergunta_formatada_display || '',
-                    alternativas: question.alternativas?.length === 4 ? question.alternativas : ['', '', '', ''],
+                    alternativas: question.alternativas?.length > 0 ? question.alternativas : ['', ''],
                     correta: question.correta || '',
                     tema: question.tema || '',
                     subtema: question.subtema || '',
@@ -32,7 +56,6 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question }) {
                     fonte: question.fonte || '',
                 });
             } else {
-                // Limpa o formulário para criação
                 setFormData(getInitialFormData());
             }
         }
@@ -51,21 +74,48 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question }) {
         setFormData(prev => ({ ...prev, alternativas: newAlternativas }));
     };
     
-    // Converte a string de 'publico' ou 'canal' (separada por vírgula) em um array
-    const handleArrayStringChange = (e) => {
-        const { name, value } = e.target;
-        const arrayValue = value.split(',').map(item => item.trim()).filter(Boolean);
-        setFormData(prev => ({ ...prev, [name]: arrayValue }));
-    }
+    const handleAddAlternative = () => {
+        setFormData(prev => ({
+            ...prev,
+            alternativas: [...prev.alternativas, '']
+        }));
+    };
+
+    const handleRemoveAlternative = (indexToRemove) => {
+        const alternativeToRemove = formData.alternativas[indexToRemove];
+        const newCorreta = formData.correta === alternativeToRemove ? '' : formData.correta;
+
+        setFormData(prev => ({
+            ...prev,
+            alternativas: prev.alternativas.filter((_, index) => index !== indexToRemove),
+            correta: newCorreta
+        }));
+    };
+    
+    const handleMultiSelectChange = (e) => {
+        const { name, selectedOptions } = e.target;
+        const values = Array.from(selectedOptions, option => option.value);
+        setFormData(prev => ({ ...prev, [name]: values }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Garante que a resposta correta é uma das alternativas
-        if (!formData.alternativas.includes(formData.correta)) {
-            alert('A resposta correta deve ser idêntica a uma das alternativas.');
+        
+        const finalFormData = {
+            ...formData,
+            alternativas: formData.alternativas.filter(alt => alt.trim() !== '')
+        };
+
+        if (finalFormData.alternativas.length < 2) {
+            alert('A pergunta deve ter pelo menos duas alternativas preenchidas.');
             return;
         }
-        onSubmit(formData);
+
+        if (!finalFormData.correta || !finalFormData.alternativas.includes(finalFormData.correta)) {
+            alert('A resposta correta deve ser selecionada e deve ser idêntica a uma das alternativas preenchidas.');
+            return;
+        }
+        onSubmit(finalFormData);
     };
 
     return (
@@ -86,12 +136,29 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question }) {
                         <textarea name="pergunta_formatada_display" value={formData.pergunta_formatada_display} onChange={handleChange} required />
                     </div>
                     
+                    <hr className={styles.divider} />
+                    <label className={styles.sectionLabel}>Alternativas</label>
+                    
                     {formData.alternativas.map((alt, index) => (
-                        <div className={styles.formGroup} key={index}>
-                            <label>Alternativa {String.fromCharCode(65 + index)} *</label>
-                            <input value={alt} onChange={(e) => handleAlternativeChange(index, e.target.value)} required />
+                        <div className={styles.alternativeRow} key={index}>
+                            <input 
+                                value={alt} 
+                                onChange={(e) => handleAlternativeChange(index, e.target.value)}
+                                placeholder={`Alternativa ${index + 1}`}
+                            />
+                            <button 
+                                type="button" 
+                                onClick={() => handleRemoveAlternative(index)}
+                                className={styles.removeButton}
+                                disabled={formData.alternativas.length <= 2}
+                            >
+                                —
+                            </button>
                         </div>
                     ))}
+                    
+                    <button type="button" onClick={handleAddAlternative} className={styles.addButton}>+ Adicionar Alternativa</button>
+                    <hr className={styles.divider} />
 
                     <div className={styles.formGroup}>
                         <label>Resposta Correta *</label>
@@ -103,13 +170,21 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question }) {
                         </select>
                     </div>
 
-                     <div className={styles.formGroup}>
-                        <label>Público (separado por vírgula)</label>
-                        <input name="publico" value={formData.publico.join(', ')} onChange={handleArrayStringChange} placeholder="Ex: GG, GO, CN" />
-                    </div>
-                     <div className={styles.formGroup}>
-                        <label>Canal (separado por vírgula)</label>
-                        <input name="canal" value={formData.canal.join(', ')} onChange={handleArrayStringChange} placeholder="Ex: Loja Propria, Parceiros" />
+                    <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                            <label>Canal de Direcionamento</label>
+                            <select multiple name="canal" value={formData.canal} onChange={handleMultiSelectChange} className={styles.multiSelect}>
+                                {options.canais.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            <small>Segure Ctrl (ou Cmd) para selecionar mais de um.</small>
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label>Público/Cargo de Direcionamento</label>
+                             <select multiple name="publico" value={formData.publico} onChange={handleMultiSelectChange} className={styles.multiSelect}>
+                                {options.cargos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            <small>Segure Ctrl (ou Cmd) para selecionar mais de um.</small>
+                        </div>
                     </div>
 
                     <div className={styles.formActions}>

@@ -1,8 +1,6 @@
 import db from '../database/database.js';
 import { promisify } from 'util';
 import { clearQuestionsCache } from '../services/quizService.js';
-import csv from 'csv-parser';
-import { Readable } from 'stream';
 
 const dbAll = promisify(db.all.bind(db));
 const dbGet = promisify(db.get.bind(db));
@@ -12,6 +10,7 @@ const dbRun = promisify(db.run.bind(db));
 export const listQuestionsController = async (req, res) => {
     try {
         const questions = await dbAll("SELECT * FROM perguntas ORDER BY id DESC");
+        // Converte os campos JSON de volta para arrays para o frontend
         const parsedQuestions = questions.map(q => ({
             ...q,
             alternativas: JSON.parse(q.alternativas || '[]'),
@@ -111,76 +110,24 @@ export const deleteQuestionController = async (req, res) => {
     }
 };
 
-// Importar perguntas de um arquivo CSV
-export const importQuestionsFromCsvController = (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "Nenhum arquivo CSV foi enviado." });
+// --- NOVA FUNÇÃO PARA EXCLUSÃO EM MASSA ---
+export const bulkDeleteQuestionsController = async (req, res) => {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "Uma lista de IDs de perguntas é necessária." });
     }
 
-    const questions = [];
-    const bufferStream = new Readable();
-    bufferStream.push(req.file.buffer);
-    bufferStream.push(null);
+    // Cria os placeholders (?) para a cláusula IN
+    const placeholders = ids.map(() => '?').join(',');
+    const sql = `DELETE FROM perguntas WHERE id IN (${placeholders})`;
 
-    bufferStream
-        .pipe(csv({ separator: ';' }))
-        .on('data', (row) => {
-            try {
-                const alternativas = row.ALTERNATIVAS ? row.ALTERNATIVAS.split('|').map(alt => alt.trim()).filter(Boolean) : [];
-                if (!row.PERGUNTA || alternativas.length === 0 || !row.CORRETA) return;
-
-                let respostaCorretaTexto = '';
-                const respostaCorretaInput = row.CORRETA.trim().toLowerCase();
-                if (respostaCorretaInput.length === 1 && 'abcdefghijklmnopqrstuvwxyz'.includes(respostaCorretaInput)) {
-                    const index = respostaCorretaInput.charCodeAt(0) - 'a'.charCodeAt(0);
-                    if (index >= 0 && index < alternativas.length) {
-                        respostaCorretaTexto = alternativas[index];
-                    }
-                } else {
-                    const matchExato = alternativas.find(alt => alt.trim().toLowerCase() === respostaCorretaInput);
-                    if (matchExato) respostaCorretaTexto = matchExato;
-                }
-
-                if (!respostaCorretaTexto) return;
-
-                questions.push({
-                    pergunta_formatada_display: row.PERGUNTA.trim(),
-                    alternativas: JSON.stringify(alternativas),
-                    correta: respostaCorretaTexto,
-                    publico: JSON.stringify(row.PUBLICO ? row.PUBLICO.split('|').map(p => p.trim()).filter(Boolean) : []),
-                    canal: JSON.stringify(row.CANAL ? row.CANAL.split('|').map(c => c.trim()).filter(Boolean) : []),
-                    tema: row.TEMA ? row.TEMA.trim() : 'Não especificado',
-                    subtema: row.SUBTEMA ? row.SUBTEMA.trim() : 'Não especificado',
-                    feedback: row.FEEDBACK ? row.FEEDBACK.trim() : '',
-                    fonte: row.FONTE ? row.FONTE.trim() : '',
-                });
-            } catch (error) {
-                console.error('Erro processando linha do CSV na importação:', row, error);
-            }
-        })
-        .on('end', async () => {
-            if (questions.length === 0) {
-                return res.status(400).json({ error: "Nenhuma pergunta válida encontrada no arquivo CSV." });
-            }
-
-            try {
-                const stmt = db.prepare(`INSERT INTO perguntas (pergunta_formatada_display, alternativas, correta, publico, canal, tema, subtema, feedback, fonte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-                await dbRun('BEGIN TRANSACTION');
-                for (const q of questions) {
-                    await dbRun.call(stmt, Object.values(q));
-                }
-                stmt.finalize();
-                await dbRun('COMMIT');
-                
-                clearQuestionsCache();
-                res.status(201).json({ message: `${questions.length} perguntas importadas com sucesso.` });
-            } catch (dbError) {
-                await dbRun('ROLLBACK');
-                console.error("Erro de banco de dados ao importar CSV:", dbError);
-                res.status(500).json({ error: "Falha ao salvar perguntas no banco de dados." });
-            }
-        })
-        .on('error', (err) => {
-            res.status(500).json({ error: "Falha ao processar o arquivo CSV." });
-        });
+    try {
+        await dbRun(sql, ids);
+        clearQuestionsCache();
+        res.status(200).json({ message: `${ids.length} perguntas foram deletadas com sucesso.` });
+    } catch (error) {
+        console.error("Erro ao deletar perguntas em massa:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao deletar perguntas." });
+    }
 };

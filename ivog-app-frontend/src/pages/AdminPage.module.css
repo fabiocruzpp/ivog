@@ -94,6 +94,13 @@
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-size: 14px;
+    text-decoration: none;
+    line-height: 1.5;
+    /* LINHAS ADICIONADAS/MODIFICADAS PARA PADRONIZAÇÃO */
+    min-width: 150px; /* Garante um tamanho mínimo para ambos */
+    text-align: center; /* Centraliza o texto dentro do botão */
+    box-sizing: border-box; /* Garante que o padding não afete o tamanho final */
 }
 .primaryButton:hover {
     background-color: #5a28a0;

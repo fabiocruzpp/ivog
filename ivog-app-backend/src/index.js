@@ -12,29 +12,34 @@ import biRoutes from './routes/biRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import challengeRoutes from './routes/challengeRoutes.js';
 import optionsRoutes from './routes/optionsRoutes.js';
-import adminQuestionRoutes from './routes/adminQuestionRoutes.js'; // NOVA IMPORTAÇÃO
+import adminQuestionRoutes from './routes/adminQuestionRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-const corsOptions = {
-  origin: 'https://frontivog.ivogapi.xyz',
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
+// --- ORDEM DE ROTAS CORRIGIDA ---
+
+// 1. Rotas de Autenticação e Públicas primeiro
+app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);
+app.use('/api', optionsRoutes); // <<-- Rota pública movida para cima
 app.use('/api/quiz', quizRoutes);
 app.use('/api', rankingRoutes);
 app.use('/api', statsRoutes);
 app.use('/api', utilityRoutes);
-app.use('/api', biRoutes);
-app.use('/api', adminRoutes);
 app.use('/api', challengeRoutes);
-app.use('/api', optionsRoutes); 
-app.use('/api/admin/questions', adminQuestionRoutes); // NOVO USO DA ROTA
+
+// 2. Rotas Protegidas por API Key
+app.use('/api', biRoutes);
+
+// 3. Rotas Protegidas por Login de Admin por último
+app.use('/api', adminRoutes);
+app.use('/api/admin/questions', adminQuestionRoutes);
+
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

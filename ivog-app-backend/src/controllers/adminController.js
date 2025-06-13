@@ -2,12 +2,15 @@ import db from '../database/database.js';
 import { promisify } from 'util';
 import { loadAllQuestions } from '../services/quizService.js';
 import { sendMessageToAllUsers } from '../services/telegramService.js';
+import csv from 'csv-parser';
+import { Readable } from 'stream';
+import { clearQuestionsCache } from '../services/quizService.js';
 
 const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// ... (as funções getAdminConfigsController, etc. permanecem inalteradas) ...
+// ... (todas as outras funções do controller como getAdminConfigsController, etc., permanecem aqui, sem alterações)
 export const getAdminConfigsController = async (req, res) => {
   try {
     const rows = await dbAll("SELECT * FROM configuracoes");
@@ -293,4 +296,79 @@ export const getAllChallengesForDebug = async (req, res) => {
         console.error("Erro ao buscar desafios para debug:", err)
         res.status(500).json({ error: "Erro ao buscar desafios para debug." });
     }
+};
+
+export const importQuestionsFromCsvController = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo CSV foi enviado." });
+    }
+
+    const questions = [];
+    const bufferStream = new Readable();
+    bufferStream.push(req.file.buffer);
+    bufferStream.push(null);
+
+    bufferStream
+        .pipe(csv({ separator: ';' }))
+        .on('data', (row) => {
+            try {
+                const perguntaFinal = (row.PERGUNTA || '').trim();
+                const alternativasFinais = (row.ALTERNATIVAS || '').split('|').map(alt => alt.trim()).filter(Boolean);
+                const respostaCorreta = (row.CORRETA || '').trim();
+
+                if (!perguntaFinal || alternativasFinais.length === 0 || !respostaCorreta) {
+                    return;
+                }
+
+                questions.push({
+                    pergunta_formatada_display: perguntaFinal,
+                    alternativas: JSON.stringify(alternativasFinais),
+                    correta: respostaCorreta,
+                    publico: JSON.stringify(row.PUBLICO ? row.PUBLICO.split('|').map(p => p.trim()).filter(Boolean) : []),
+                    canal: JSON.stringify(row.CANAL ? row.CANAL.split('|').map(c => c.trim()).filter(Boolean) : []),
+                    tema: row.TEMA ? row.TEMA.trim() : 'Não especificado',
+                    subtema: row.SUBTEMA ? row.SUBTEMA.trim() : 'Não especificado',
+                    feedback: row.FEEDBACK ? row.FEEDBACK.trim() : '',
+                    fonte: row.FONTE ? row.FONTE.trim() : '',
+                });
+            } catch (error) {
+                console.error('Erro processando linha do CSV na importação:', row, error);
+            }
+        })
+        .on('end', async () => {
+            if (questions.length === 0) {
+                return res.status(400).json({ error: "Nenhuma pergunta válida encontrada no arquivo CSV." });
+            }
+
+            try {
+                const stmt = db.prepare(`INSERT INTO perguntas (pergunta_formatada_display, alternativas, correta, publico, canal, tema, subtema, feedback, fonte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                await dbRun('BEGIN TRANSACTION');
+                // Usando uma Promise para aguardar a conclusão de todas as inserções
+                for (const q of questions) {
+                    await new Promise((resolve, reject) => {
+                        stmt.run(Object.values(q), (err) => {
+                            if (err) return reject(err);
+                            resolve();
+                        });
+                    });
+                }
+                await new Promise((resolve, reject) => {
+                    stmt.finalize((err) => {
+                        if (err) return reject(err);
+                        resolve();
+                    });
+                });
+                await dbRun('COMMIT');
+                
+                clearQuestionsCache();
+                res.status(201).json({ message: `${questions.length} perguntas importadas com sucesso.` });
+            } catch (dbError) {
+                await dbRun('ROLLBACK');
+                console.error("Erro de banco de dados ao importar CSV:", dbError);
+                res.status(500).json({ error: "Falha ao salvar perguntas no banco de dados." });
+            }
+        })
+        .on('error', (err) => {
+            res.status(500).json({ error: "Falha ao processar o arquivo CSV." });
+        });
 };

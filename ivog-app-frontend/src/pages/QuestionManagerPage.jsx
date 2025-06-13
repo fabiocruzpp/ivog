@@ -5,41 +5,53 @@ import styles from './QuestionManagerPage.module.css';
 import QuestionFormModal from '../components/QuestionFormModal';
 
 const BackArrowIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
 );
 
 function QuestionManagerPage() {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [telegramId, setTelegramId] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [importing, setImporting] = useState(false);
+    const [telegramId, setTelegramId] = useState(null);
+    const [selectedIds, setSelectedIds] = useState([]); // NOVO ESTADO
 
     const fileInputRef = useRef(null);
+    const headerCheckboxRef = useRef(null);
 
     useEffect(() => {
-        const user = window.Telegram.WebApp.initDataUnsafe?.user;
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (user && user.id) {
             setTelegramId(user.id.toString());
-        } else {
-            setError("ID do Telegram não encontrado. Acesso negado.");
-            setLoading(false);
         }
     }, []);
+    
+    // Sincroniza o estado do checkbox "selecionar todos"
+    useEffect(() => {
+        if (headerCheckboxRef.current) {
+            const allIdsOnPage = questions.map(q => q.id);
+            const allOnPageSelected = allIdsOnPage.length > 0 && allIdsOnPage.every(id => selectedIds.includes(id));
+            headerCheckboxRef.current.checked = allOnPageSelected;
+            headerCheckboxRef.current.indeterminate = !allOnPageSelected && selectedIds.some(id => allIdsOnPage.includes(id));
+        }
+    }, [selectedIds, questions]);
 
     const fetchQuestions = useCallback(async () => {
-        if (!telegramId) return;
+        const isWeb = !window.Telegram?.WebApp?.initData;
+        if (!isWeb && !telegramId) {
+            return;
+        }
+
         try {
             setLoading(true);
-            const response = await api.get('/admin/questions', {
-                params: { telegram_id: telegramId }
-            });
+            const params = telegramId ? { telegram_id: telegramId } : {};
+            const response = await api.get('/admin/questions', { params });
             setQuestions(response.data);
             setError('');
         } catch (err) {
-            setError('Falha ao carregar as perguntas. Verifique se você tem permissão de administrador.');
+            setError('Falha ao carregar as perguntas.');
             console.error(err);
         } finally {
             setLoading(false);
@@ -68,9 +80,7 @@ function QuestionManagerPage() {
     const handleDelete = async (questionId) => {
         if (window.confirm('Tem certeza que deseja excluir esta pergunta?')) {
             try {
-                await api.delete(`/admin/questions/${questionId}`, {
-                    data: { telegram_id: telegramId }
-                });
+                await api.delete(`/admin/questions/${questionId}`, { data: { telegram_id: telegramId } });
                 fetchQuestions();
             } catch (err) {
                 alert('Erro ao excluir a pergunta.');
@@ -105,11 +115,14 @@ function QuestionManagerPage() {
 
         const formData = new FormData();
         formData.append('csvfile', file);
-        formData.append('telegram_id', telegramId);
+        
+        const url = telegramId 
+            ? `/admin/import-questions?telegram_id=${telegramId}` 
+            : '/admin/import-questions';
 
         try {
             setImporting(true);
-            const response = await api.post('/admin/questions/import', formData, {
+            const response = await api.post(url, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             alert(response.data.message);
@@ -120,7 +133,45 @@ function QuestionManagerPage() {
             console.error(err);
         } finally {
             setImporting(false);
-            event.target.value = null; // Reseta o input de arquivo
+            event.target.value = null;
+        }
+    };
+
+    // --- NOVAS FUNÇÕES PARA SELEÇÃO ---
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allIds = questions.map(q => q.id);
+            setSelectedIds(allIds);
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(selectedId => selectedId !== id) 
+                : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) {
+            alert("Nenhuma pergunta selecionada.");
+            return;
+        }
+        if (window.confirm(`Tem certeza que deseja excluir as ${selectedIds.length} perguntas selecionadas?`)) {
+            try {
+                await api.post('/admin/questions/bulk-delete', { 
+                    ids: selectedIds,
+                    telegram_id: telegramId 
+                });
+                setSelectedIds([]);
+                fetchQuestions();
+            } catch (err) {
+                alert("Erro ao excluir as perguntas selecionadas.");
+                console.error(err);
+            }
         }
     };
 
@@ -133,6 +184,9 @@ function QuestionManagerPage() {
                 <table className={styles.questionsTable}>
                     <thead>
                         <tr>
+                            <th className={styles.checkboxCell}>
+                                <input type="checkbox" ref={headerCheckboxRef} onChange={handleSelectAll} />
+                            </th>
                             <th>ID</th>
                             <th>Tema</th>
                             <th>Pergunta</th>
@@ -142,6 +196,9 @@ function QuestionManagerPage() {
                     <tbody>
                         {questions.length > 0 ? questions.map(q => (
                             <tr key={q.id}>
+                                <td className={styles.checkboxCell}>
+                                    <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => handleSelectOne(q.id)} />
+                                </td>
                                 <td>{q.id}</td>
                                 <td>{q.tema}</td>
                                 <td className={styles.questionTextCell}>{q.pergunta_formatada_display}</td>
@@ -152,7 +209,7 @@ function QuestionManagerPage() {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan="4">Nenhuma pergunta encontrada.</td>
+                                <td colSpan="5">Nenhuma pergunta encontrada.</td>
                             </tr>
                         )}
                     </tbody>
@@ -169,11 +226,20 @@ function QuestionManagerPage() {
             </div>
             <div className={styles.contentArea}>
                 <div className={styles.toolbar}>
-                    <button onClick={handleOpenCreateModal} className={styles.primaryButton}>Criar Nova Pergunta</button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".csv" style={{ display: 'none' }} />
-                    <button onClick={handleImportClick} className={styles.secondaryButton} disabled={importing}>
-                        {importing ? 'Importando...' : 'Importar CSV'}
-                    </button>
+                    <div>
+                        <button onClick={handleOpenCreateModal} className={styles.primaryButton}>Criar Nova Pergunta</button>
+                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".csv" style={{ display: 'none' }} />
+                        <button onClick={handleImportClick} className={styles.secondaryButton} disabled={importing}>
+                            {importing ? 'Importando...' : 'Importar CSV'}
+                        </button>
+                    </div>
+                    <div>
+                        {selectedIds.length > 0 && (
+                             <button onClick={handleBulkDelete} className={styles.bulkDeleteButton}>
+                                Excluir Selecionadas ({selectedIds.length})
+                             </button>
+                        )}
+                    </div>
                 </div>
                 {renderContent()}
             </div>
@@ -183,6 +249,7 @@ function QuestionManagerPage() {
                 onClose={handleCloseModal}
                 onSubmit={handleSubmit}
                 question={editingQuestion}
+                telegramId={telegramId} 
             />
         </div>
     );

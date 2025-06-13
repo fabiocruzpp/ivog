@@ -15,10 +15,10 @@ export const loadAllQuestions = () => {
       
       const questions = rows.map(row => {
         try {
-          // Desserializa os campos JSON
-          const alternativas = JSON.parse(row.alternativas);
-          const publico = JSON.parse(row.publico);
-          const canal = JSON.parse(row.canal);
+          // CORREÇÃO: Adicionamos '|| "[]"' para evitar erro se o campo for nulo no banco.
+          const alternativas = JSON.parse(row.alternativas || '[]');
+          const publico = JSON.parse(row.publico || '[]');
+          const canal = JSON.parse(row.canal || '[]');
           
           return {
             ...row,
@@ -28,9 +28,9 @@ export const loadAllQuestions = () => {
           };
         } catch(e) {
           console.error(`Erro ao parsear JSON da pergunta ID ${row.id}:`, e);
-          return null; // Retorna nulo para ser filtrado
+          return null;
         }
-      }).filter(Boolean); // Remove qualquer pergunta que falhou no parse
+      }).filter(Boolean);
 
       console.log(`${questions.length} perguntas carregadas do banco de dados e cacheadas com sucesso.`);
       cachedQuestions = questions;
@@ -43,7 +43,6 @@ export const loadAllQuestions = () => {
   });
 };
 
-// NOVA FUNÇÃO: Limpa o cache para forçar a releitura do banco de dados.
 export const clearQuestionsCache = () => {
     console.log("Limpando cache de perguntas.");
     cachedQuestions = [];

@@ -3,6 +3,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+// Componentes de Página
 import Dashboard from './pages/Dashboard';
 import QuizPage from './pages/QuizPage';
 import RankingPage from './pages/RankingPage';
@@ -10,40 +11,47 @@ import StatsPage from './pages/StatsPage';
 import ProfilePage from './pages/ProfilePage';
 import ResultsPage from './pages/ResultsPage';
 import AdminPage from './pages/AdminPage';
-import ChallengesPage from './pages/ChallengesPage.jsx'; // CORRIGIDO
+import ChallengesPage from './pages/ChallengesPage.jsx';
 import RegisterPage from './pages/RegisterPage';
 import QuestionManagerPage from './pages/QuestionManagerPage';
+import LoginPage from './pages/LoginPage';
+
+// Componente de Rota Protegida
+import ProtectedRoute from './components/ProtectedRoute';
+
 
 function App() {
+  const isTelegram = !!window.Telegram?.WebApp?.initData;
+
   React.useEffect(() => {
     // Inicializa a Web App do Telegram
-    if (window.Telegram && window.Telegram.WebApp) {
+    if (isTelegram) {
         window.Telegram.WebApp.ready();
-        // Expande a tela para ocupar o espaço todo
         window.Telegram.WebApp.expand();
     }
-  }, []);
+  }, [isTelegram]);
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* A rota principal agora tem a lógica de verificação */}
-        <Route path="/" element={<Dashboard />} />
+        {/* Rota de Login para a versão Web */}
+        <Route path="/login" element={<LoginPage />} />
         
-        {/* Nova rota para a página de cadastro */}
+        {/* Rotas Públicas/do App Telegram */}
+        <Route path="/" element={<Dashboard />} />
         <Route path="/register" element={<RegisterPage />} />
-
-        {/* Rotas existentes */}
         <Route path="/quiz" element={<QuizPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/quiz/results" element={<ResultsPage />} />
-        <Route path="/admin" element={<AdminPage />} />
         <Route path="/challenges" element={<ChallengesPage />} />
 
-        {/* NOVA ROTA DE ADMIN */}
-        <Route path="/admin/questions" element={<QuestionManagerPage />} />
+        {/* Rotas de Admin Protegidas */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/questions" element={<QuestionManagerPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

@@ -38,15 +38,23 @@
     gap: 5px;
 }
 
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
 .formGroup label {
     font-weight: 600;
     font-size: 14px;
     color: var(--primary-dark-purple);
 }
 
+/* --- ESTILO UNIFICADO PARA TODOS OS CAMPOS --- */
 .formGroup input,
 .formGroup textarea,
-.formGroup select {
+.formGroup select,
+.alternativeRow input {
     width: 100%;
     padding: 10px 12px;
     border-radius: 8px;
@@ -54,11 +62,14 @@
     font-size: 15px;
     font-family: inherit;
     box-sizing: border-box;
+    background-color: var(--secondary-white);
 }
 
+/* --- ESTILO PARA FOCO UNIFICADO --- */
 .formGroup input:focus,
 .formGroup textarea:focus,
-.formGroup select:focus {
+.formGroup select:focus,
+.alternativeRow input:focus {
     border-color: var(--primary-purple);
     outline: none;
     box-shadow: 0 0 0 2px var(--primary-light-purple);
@@ -67,6 +78,76 @@
 .formGroup textarea {
     min-height: 80px;
     resize: vertical;
+}
+
+.multiSelect {
+    min-height: 100px;
+    padding: 10px; /* Garante padding interno consistente */
+}
+
+.formGroup small {
+    font-size: 12px;
+    color: var(--secondary-dark-grey);
+    margin-top: 2px;
+}
+
+
+.divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 5px 0;
+}
+
+.sectionLabel {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary-dark-purple);
+    margin-bottom: -5px;
+}
+
+.alternativeRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alternativeRow input {
+    flex-grow: 1;
+}
+
+.addButton,
+.removeButton {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.addButton {
+    background-color: var(--primary-light-purple);
+    color: var(--primary-dark-purple);
+    width: 100%;
+    margin-top: -5px;
+}
+.addButton:hover {
+    background-color: #dcd0f3;
+}
+
+.removeButton {
+    background-color: #FDDDE1;
+    color: #A42832;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.removeButton:disabled {
+    background-color: var(--secondary-dark-grey);
+    color: var(--secondary-white);
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .formActions {

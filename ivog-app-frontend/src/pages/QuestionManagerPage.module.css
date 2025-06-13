@@ -58,8 +58,15 @@
 
 .toolbar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 15px;
     margin-bottom: 10px;
+}
+
+.toolbar > div {
+    display: flex;
+    gap: 15px;
 }
 
 .primaryButton {
@@ -90,6 +97,21 @@
     background-color: #e0e0e0;
 }
 
+.bulkDeleteButton {
+    background-color: #A42832;
+    color: var(--secondary-white);
+    padding: 10px 18px;
+    border: none;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.bulkDeleteButton:hover {
+    background-color: #8b222b;
+}
+
+
 .tableContainer {
     width: 100%;
     overflow-x: auto;
@@ -115,6 +137,11 @@
 .questionsTable th {
     font-weight: 600;
     color: var(--primary-dark-purple);
+}
+
+.checkboxCell {
+    width: 1%;
+    text-align: center;
 }
 
 .questionsTable tbody tr:last-child td {
