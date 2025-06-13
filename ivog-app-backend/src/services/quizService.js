@@ -1,67 +1,50 @@
-import fs from 'fs';
-import path from 'path';
-import csv from 'csv-parser';
-import { fileURLToPath } from 'url';
+import db from '../database/database.js';
+import { promisify } from 'util';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsCsvPath = path.resolve(__dirname, '..', '..', 'Base-Perguntas-IvoGiroV.csv');
+const dbAll = promisify(db.all.bind(db));
 let cachedQuestions = [];
 
 export const loadAllQuestions = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (cachedQuestions.length > 0) {
       return resolve(cachedQuestions);
     }
-    const questions = [];
-    fs.createReadStream(questionsCsvPath)
-      .pipe(csv({ separator: ';' }))
-      .on('data', (row) => {
+    
+    try {
+      const rows = await dbAll('SELECT * FROM perguntas');
+      
+      const questions = rows.map(row => {
         try {
-          const alternativas = row.ALTERNATIVAS ? row.ALTERNATIVAS.split('|').map(alt => alt.trim()).filter(Boolean) : [];
-          if (!row.PERGUNTA || alternativas.length === 0 || !row.CORRETA || !row.PUBLICO) {
-            return;
-          }
-          let respostaCorretaTexto = '';
-          const respostaCorretaInput = row.CORRETA.trim().toLowerCase();
-          if (respostaCorretaInput.length === 1 && 'abcdefghijklmnopqrstuvwxyz'.includes(respostaCorretaInput)) {
-            const index = respostaCorretaInput.charCodeAt(0) - 'a'.charCodeAt(0);
-            if (index >= 0 && index < alternativas.length) {
-              respostaCorretaTexto = alternativas[index];
-            }
-          } else {
-            const matchExato = alternativas.find(alt => alt.trim().toLowerCase() === respostaCorretaInput);
-            if(matchExato) {
-                respostaCorretaTexto = matchExato;
-            }
-          }
-          if (!respostaCorretaTexto) {
-            return;
-          }
-          questions.push({
-            id: `csv_${questions.length + 1}`,
-            pergunta_raw_csv: row.PERGUNTA.trim(),
-            pergunta_formatada_display: row.PERGUNTA.trim(),
-            alternativas: alternativas,
-            correta: respostaCorretaTexto,
-            publico: row.PUBLICO ? row.PUBLICO.split('|').map(p => p.trim()).filter(Boolean) : [],
-            canal: row.CANAL ? row.CANAL.split('|').map(c => c.trim()).filter(Boolean) : [],
-            tema: row.TEMA ? row.TEMA.trim() : 'Não especificado',
-            subtema: row.SUBTEMA ? row.SUBTEMA.trim() : 'Não especificado',
-            feedback: row.FEEDBACK ? row.FEEDBACK.trim() : '',
-            fonte: row.FONTE ? row.FONTE.trim() : '',
-          });
-        } catch (error) {
-            console.error('Erro processando linha do CSV:', row, error);
+          // Desserializa os campos JSON
+          const alternativas = JSON.parse(row.alternativas);
+          const publico = JSON.parse(row.publico);
+          const canal = JSON.parse(row.canal);
+          
+          return {
+            ...row,
+            alternativas,
+            publico,
+            canal,
+          };
+        } catch(e) {
+          console.error(`Erro ao parsear JSON da pergunta ID ${row.id}:`, e);
+          return null; // Retorna nulo para ser filtrado
         }
-      })
-      .on('end', () => {
-        console.log('Perguntas do CSV carregadas e cacheadas com sucesso.');
-        cachedQuestions = questions;
-        resolve(cachedQuestions);
-      })
-      .on('error', (error) => {
+      }).filter(Boolean); // Remove qualquer pergunta que falhou no parse
+
+      console.log(`${questions.length} perguntas carregadas do banco de dados e cacheadas com sucesso.`);
+      cachedQuestions = questions;
+      resolve(cachedQuestions);
+
+    } catch (error) {
+        console.error('Erro ao carregar perguntas do banco de dados:', error);
         reject(error);
-      });
+    }
   });
+};
+
+// NOVA FUNÇÃO: Limpa o cache para forçar a releitura do banco de dados.
+export const clearQuestionsCache = () => {
+    console.log("Limpando cache de perguntas.");
+    cachedQuestions = [];
 };

@@ -10,8 +10,9 @@ import StatsPage from './pages/StatsPage';
 import ProfilePage from './pages/ProfilePage';
 import ResultsPage from './pages/ResultsPage';
 import AdminPage from './pages/AdminPage';
-import ChallengesPage from './pages/ChallengesPage.jsx';
-import RegisterPage from './pages/RegisterPage'; // Importa a nova página
+import ChallengesPage from './pages/ChallengesPage.jsx'; // CORRIGIDO
+import RegisterPage from './pages/RegisterPage';
+import QuestionManagerPage from './pages/QuestionManagerPage';
 
 function App() {
   React.useEffect(() => {
@@ -40,6 +41,9 @@ function App() {
         <Route path="/quiz/results" element={<ResultsPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/challenges" element={<ChallengesPage />} />
+
+        {/* NOVA ROTA DE ADMIN */}
+        <Route path="/admin/questions" element={<QuestionManagerPage />} />
       </Routes>
     </BrowserRouter>
   );

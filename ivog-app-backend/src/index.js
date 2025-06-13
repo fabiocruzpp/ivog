@@ -11,7 +11,8 @@ import utilityRoutes from './routes/utilityRoutes.js';
 import biRoutes from './routes/biRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import challengeRoutes from './routes/challengeRoutes.js';
-import optionsRoutes from './routes/optionsRoutes.js'; // NOVA IMPORTAÇÃO
+import optionsRoutes from './routes/optionsRoutes.js';
+import adminQuestionRoutes from './routes/adminQuestionRoutes.js'; // NOVA IMPORTAÇÃO
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -32,7 +33,8 @@ app.use('/api', utilityRoutes);
 app.use('/api', biRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', challengeRoutes);
-app.use('/api', optionsRoutes); // NOVO USO DA ROTA
+app.use('/api', optionsRoutes); 
+app.use('/api/admin/questions', adminQuestionRoutes); // NOVO USO DA ROTA
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

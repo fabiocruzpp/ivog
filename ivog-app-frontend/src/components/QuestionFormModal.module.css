@@ -1,0 +1,105 @@
+.modalBackdrop {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modalContent h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--primary-dark-black);
+}
+
+.questionForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.formGroup label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary-dark-purple);
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--secondary-dark-grey);
+    font-size: 15px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+    border-color: var(--primary-purple);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-light-purple);
+}
+
+.formGroup textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.primaryButton {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    padding: 10px 18px;
+    border: none;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.primaryButton:hover {
+    background-color: #5a28a0;
+}
+
+.secondaryButton {
+    background-color: var(--secondary-soft-grey);
+    color: var(--primary-dark-black);
+    padding: 10px 18px;
+    border: 1px solid var(--secondary-dark-grey);
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.secondaryButton:hover {
+    background-color: #e0e0e0;
+}
