@@ -16,6 +16,7 @@ import adminQuestionRoutes from './routes/adminQuestionRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import configRoutes from './routes/configRoutes.js';
 import adminDashboardRoutes from './routes/adminDashboardRoutes.js';
+import adminManagementRoutes from './routes/adminManagementRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -37,11 +38,11 @@ app.use('/api', configRoutes);
 // Rota protegida por API Key
 app.use('/api', biRoutes);
 
-// --- SEÇÃO DE ADMIN CORRIGIDA ---
-// Todas as rotas de admin agora são montadas aqui de forma consistente
+// Rotas de Admin
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/admin/questions', adminQuestionRoutes);
+app.use('/api/admin/management', adminManagementRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

@@ -39,20 +39,10 @@ function AdminDashboardPage() {
     }, []);
 
     useEffect(() => {
-        const { ddd } = selectedFilters;
-        if (ddd) {
-            api.get('/options/canais', { params: { ddd } }).then(res => {
-                setFilterOptions(prev => ({ ...prev, canais: res.data }));
-            });
-        }
-    }, [selectedFilters.ddd]);
-
-    useEffect(() => {
         const { ddd, canal_principal, rede_parceiro } = selectedFilters;
         if (ddd && canal_principal) {
             const params = { ddd, canal: canal_principal };
             
-            // Lógica para buscar Redes/Parceiros
             if (canal_principal === 'Parceiros') {
                 api.get('/options/redes-e-parceiros', { params }).then(res => {
                     setFilterOptions(prev => ({ ...prev, redes: res.data }));
@@ -65,7 +55,6 @@ function AdminDashboardPage() {
                  setFilterOptions(prev => ({ ...prev, redes: [] }));
             }
 
-            // Lógica para buscar Lojas
             if (canal_principal === 'Loja Própria' || rede_parceiro) {
                  api.get('/options/lojas', { params: { ...params, rede: rede_parceiro } }).then(res => {
                     setFilterOptions(prev => ({ ...prev, lojas: res.data }));
@@ -74,7 +63,6 @@ function AdminDashboardPage() {
                  setFilterOptions(prev => ({ ...prev, lojas: [] }));
             }
 
-            // Lógica para buscar Cargos
             const cargoParams = { canal: canal_principal, tipoParceiro: rede_parceiro };
             api.get('/options/cargos', { params: cargoParams }).then(res => {
                 setFilterOptions(prev => ({ ...prev, cargos: res.data }));
@@ -103,6 +91,7 @@ function AdminDashboardPage() {
             setKpis(kpisRes.data);
             setQuestionPerfData(questionPerfRes.data);
             setTopUsersData(topUsersRes.data.map(u => ({ nome: u.first_name, simulados: u.activityCount })));
+
             setActivityData({
                 labels: activityRes.data.map(d => new Date(d.date).toLocaleDateString('pt-BR')),
                 datasets: [{ label: 'Simulados por Dia', data: activityRes.data.map(d => d.count), borderColor: 'rgb(108, 48, 191)', backgroundColor: 'rgba(108, 48, 191, 0.5)', fill: true }]
@@ -169,17 +158,38 @@ function AdminDashboardPage() {
                         <KpiCard title="Treinos Realizados" value={kpis?.totalTrainings ?? 0} />
                     </div>
 
-                    <div className={styles.tableGrid}>
-                        <InfoTable title="Perguntas Mais Difíceis" headers={['Pergunta', '% Acerto']} data={questionPerfData?.hardest.map(q => ({ pergunta: q.pergunta, taxa: `${q.successRate.toFixed(1)}%` }))} />
-                        <InfoTable title="Perguntas Mais Fáceis" headers={['Pergunta', '% Acerto']} data={questionPerfData?.easiest.map(q => ({ pergunta: q.pergunta, taxa: `${q.successRate.toFixed(1)}%` }))} />
-                        <InfoTable title="Top 10 Usuários por Atividade" headers={['Nome', 'Simulados Feitos']} data={topUsersData} />
-                    </div>
-
-                    <div className={styles.chartGrid}>
-                        <div className={styles.chartContainer}><h3>Atividade Recente</h3>{activityData && <LineChart data={activityData} />}</div>
-                        <div className={styles.chartContainer}><h3>Distribuição por Canal</h3>{userDistributionData && <DoughnutChart data={userDistributionData} />}</div>
-                        <div className={styles.chartContainer}><h3>Temas Mais Populares</h3>{themeData && <BarChart data={themeData} />}</div>
-                        <div className={styles.chartContainer}><h3>Desempenho por Tema</h3>{themePerformanceData && <BarChart data={themePerformanceData} />}</div>
+                    <div className={styles.widgetGrid}>
+                        <div className={styles.chartContainer}>
+                            <h3>Atividade Recente</h3>
+                            {activityData && <LineChart data={activityData} />}
+                        </div>
+                        <div className={styles.chartContainer}>
+                            <h3>Distribuição por Canal</h3>
+                            {userDistributionData && <DoughnutChart data={userDistributionData} />}
+                        </div>
+                        <InfoTable 
+                            title="Perguntas Mais Difíceis"
+                            headers={['Pergunta', '% Acerto']}
+                            data={questionPerfData?.hardest.map(q => ({ pergunta: q.pergunta, taxa: `${q.successRate.toFixed(1)}%` }))}
+                        />
+                        <InfoTable 
+                            title="Perguntas Mais Fáceis"
+                            headers={['Pergunta', '% Acerto']}
+                            data={questionPerfData?.easiest.map(q => ({ pergunta: q.pergunta, taxa: `${q.successRate.toFixed(1)}%` }))}
+                        />
+                        <div className={`${styles.chartContainer} ${styles.fullWidth}`}>
+                            <h3>Desempenho por Tema</h3>
+                            {themePerformanceData && <BarChart data={themePerformanceData} />}
+                        </div>
+                        <InfoTable 
+                            title="Top 10 Usuários por Atividade"
+                            headers={['Nome', 'Simulados Feitos']}
+                            data={topUsersData}
+                        />
+                         <div className={`${styles.chartContainer} ${styles.fullWidth}`}>
+                            <h3>Temas Mais Populares</h3>
+                            {themeData && <BarChart data={themeData} />}
+                        </div>
                     </div>
                 </>
             )}

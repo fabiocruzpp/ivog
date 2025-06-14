@@ -10,35 +10,6 @@
     background-color: var(--primary-background);
 }
 
-.headerBar {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    background-color: var(--primary-dark-purple);
-    color: var(--secondary-white);
-    min-height: 40px;
-    flex-shrink: 0;
-}
-
-.headerIconBtn {
-    background: none;
-    border: none;
-    color: var(--secondary-white);
-    cursor: pointer;
-    padding: 8px;
-    line-height: 0;
-    text-decoration: none;
-}
-
-.screenTitle {
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    flex-grow: 1;
-    margin: 0;
-    padding-right: 40px; /* Compensa o botão de voltar */
-}
-
 .contentArea {
     padding: 20px;
     flex-grow: 1;
@@ -176,6 +147,51 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
+/* ================================== */
+/* NOVOS ESTILOS PARA GERENCIAMENTO DE ADMIN */
+/* ================================== */
+.addAdminForm {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.adminInput {
+    flex-grow: 1;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--secondary-dark-grey);
+}
+
+.adminList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.adminList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--primary-background);
+    border-radius: 8px;
+}
+
+.deleteButtonSmall {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    background-color: #FDDDE1;
+    color: #A42832;
+}
 
 /* ================================== */
 /* ESTILOS DA TABELA DE DESAFIOS    */

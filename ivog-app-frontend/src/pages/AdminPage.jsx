@@ -3,6 +3,8 @@ import api from '../services/api';
 import { Link } from 'react-router-dom';
 import styles from './AdminPage.module.css';
 import { useConfigStore } from '../store/configStore';
+import { useFeedbackStore } from '../store/feedbackStore';
+import { useUserStore } from '../store/userStore'; // Importado para obter o usuário atual
 
 const getInitialFormData = () => ({
     id: null,
@@ -154,6 +156,93 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
     );
 }
 
+function AdminManagement() {
+    const [admins, setAdmins] = useState([]);
+    const [newAdminId, setNewAdminId] = useState('');
+    const { addToast } = useFeedbackStore();
+    const { user } = useUserStore(); // Pega o usuário logado do store
+
+    // Define o ID do super administrador
+    const SUPER_ADMIN_ID = '1318210843';
+    const isSuperAdmin = user?.id.toString() === SUPER_ADMIN_ID;
+
+    const fetchAdmins = useCallback(() => {
+        api.get('/admin/management/admins')
+            .then(res => setAdmins(res.data))
+            .catch(() => addToast('Erro ao carregar lista de admins.', 'error'));
+    }, [addToast]);
+
+    useEffect(() => {
+        fetchAdmins();
+    }, [fetchAdmins]);
+
+    const handleAddAdmin = async (e) => {
+        e.preventDefault();
+        if (!newAdminId.trim()) return;
+        try {
+            const res = await api.post('/admin/management/admins', { telegram_id_to_add: newAdminId });
+            addToast('Admin adicionado com sucesso!', 'success');
+            alert(`Credenciais para o novo admin:\nUsuário: ${res.data.newUser.username}\nSenha: ${res.data.newUser.password}`);
+            setNewAdminId('');
+            fetchAdmins();
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao adicionar admin.', 'error');
+        }
+    };
+
+    const handleRemoveAdmin = async (id) => {
+        if (window.confirm(`Tem certeza que deseja remover este administrador (${id})?`)) {
+            try {
+                await api.delete(`/admin/management/admins/${id}`);
+                addToast('Admin removido com sucesso.', 'success');
+                fetchAdmins();
+            } catch (err) {
+                addToast(err.response?.data?.error || 'Erro ao remover admin.', 'error');
+            }
+        }
+    };
+
+    return (
+        <div className={styles.adminSection}>
+            <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>Gerenciar Administradores</h2>
+            </div>
+            <form onSubmit={handleAddAdmin} className={styles.addAdminForm}>
+                <input 
+                    type="text" 
+                    value={newAdminId}
+                    onChange={(e) => setNewAdminId(e.target.value)}
+                    placeholder="ID do Telegram do novo admin"
+                    className={styles.adminInput}
+                    disabled={!isSuperAdmin} // Desabilitado se não for super admin
+                />
+                <button 
+                    type="submit" 
+                    className={styles.primaryButton}
+                    disabled={!isSuperAdmin} // Desabilitado se não for super admin
+                >
+                    Adicionar
+                </button>
+            </form>
+            <ul className={styles.adminList}>
+                {admins.map(admin => (
+                    <li key={admin.telegram_id}>
+                        <span>{admin.first_name} ({admin.telegram_id})</span>
+                        <button 
+                            onClick={() => handleRemoveAdmin(admin.telegram_id)} 
+                            className={styles.deleteButtonSmall}
+                            // Desabilitado se não for super admin OU se for o próprio super admin
+                            disabled={!isSuperAdmin || admin.telegram_id.toString() === SUPER_ADMIN_ID}
+                        >
+                            Remover
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -266,6 +355,8 @@ function AdminPage() {
                         </Link>
                     </div>
                 </div>
+
+                <AdminManagement />
 
                 <div className={styles.adminSection}>
                     <div className={styles.sectionHeader}>
