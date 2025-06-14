@@ -5,12 +5,22 @@ import { sendMessageToAllUsers } from '../services/telegramService.js';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { clearQuestionsCache } from '../services/quizService.js';
+import { getAllCanais, getAllCargos } from '../services/optionsService.js';
 
 const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// ... (todas as outras funções do controller como getAdminConfigsController, etc., permanecem aqui, sem alterações)
+export const getQuestionFormOptionsController = (req, res) => {
+    try {
+        const canais = getAllCanais();
+        const cargos = getAllCargos();
+        res.status(200).json({ canais, cargos });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar opções para o formulário.' });
+    }
+};
+
 export const getAdminConfigsController = async (req, res) => {
   try {
     const rows = await dbAll("SELECT * FROM configuracoes");
@@ -31,7 +41,7 @@ export const getAdminConfigsController = async (req, res) => {
 export const toggleAdminConfigController = async (req, res) => {
   try {
     const { key } = req.params;
-    const validKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo'];
+    const validKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo', 'modo_treino_ativado'];
     if (!validKeys.includes(key)) {
       return res.status(400).json({ error: "Chave de configuração inválida." });
     }
@@ -312,16 +322,18 @@ export const importQuestionsFromCsvController = (req, res) => {
         .pipe(csv({ separator: ';' }))
         .on('data', (row) => {
             try {
-                const perguntaFinal = (row.PERGUNTA || '').trim();
+                const perguntaBruta = (row.PERGUNTA || '').trim();
+                let perguntaFormatada = perguntaBruta.replace(/\s+([b-z]\))/g, '\n$1');
+
                 const alternativasFinais = (row.ALTERNATIVAS || '').split('|').map(alt => alt.trim()).filter(Boolean);
                 const respostaCorreta = (row.CORRETA || '').trim();
 
-                if (!perguntaFinal || alternativasFinais.length === 0 || !respostaCorreta) {
+                if (!perguntaFormatada || alternativasFinais.length === 0 || !respostaCorreta) {
                     return;
                 }
 
                 questions.push({
-                    pergunta_formatada_display: perguntaFinal,
+                    pergunta_formatada_display: perguntaFormatada,
                     alternativas: JSON.stringify(alternativasFinais),
                     correta: respostaCorreta,
                     publico: JSON.stringify(row.PUBLICO ? row.PUBLICO.split('|').map(p => p.trim()).filter(Boolean) : []),
@@ -341,27 +353,39 @@ export const importQuestionsFromCsvController = (req, res) => {
             }
 
             try {
-                const stmt = db.prepare(`INSERT INTO perguntas (pergunta_formatada_display, alternativas, correta, publico, canal, tema, subtema, feedback, fonte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
                 await dbRun('BEGIN TRANSACTION');
-                // Usando uma Promise para aguardar a conclusão de todas as inserções
+
+                const stmt = db.prepare(`INSERT INTO perguntas (pergunta_formatada_display, alternativas, correta, publico, canal, tema, subtema, feedback, fonte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                
+                let addedCount = 0;
+                let skippedCount = 0;
+
                 for (const q of questions) {
-                    await new Promise((resolve, reject) => {
-                        stmt.run(Object.values(q), (err) => {
-                            if (err) return reject(err);
-                            resolve();
+                    const existing = await dbGet('SELECT id FROM perguntas WHERE pergunta_formatada_display = ?', [q.pergunta_formatada_display]);
+                    if (!existing) {
+                        await new Promise((resolve, reject) => {
+                            stmt.run(Object.values(q), (err) => {
+                                if (err) return reject(err);
+                                resolve();
+                            });
                         });
-                    });
+                        addedCount++;
+                    } else {
+                        skippedCount++;
+                    }
                 }
+
                 await new Promise((resolve, reject) => {
                     stmt.finalize((err) => {
                         if (err) return reject(err);
                         resolve();
                     });
                 });
+
                 await dbRun('COMMIT');
                 
                 clearQuestionsCache();
-                res.status(201).json({ message: `${questions.length} perguntas importadas com sucesso.` });
+                res.status(201).json({ message: `Importação concluída. ${addedCount} perguntas novas adicionadas. ${skippedCount} duplicadas foram ignoradas.` });
             } catch (dbError) {
                 await dbRun('ROLLBACK');
                 console.error("Erro de banco de dados ao importar CSV:", dbError);

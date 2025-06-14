@@ -5,6 +5,29 @@ const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 
 /**
+ * Controller para buscar as configurações públicas do aplicativo.
+ */
+export const getPublicConfigsController = async (req, res) => {
+  try {
+    const rows = await dbAll("SELECT * FROM configuracoes");
+    const configs = rows.reduce((acc, row) => {
+      // Retorna apenas as chaves seguras para o frontend
+      const publicKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo', 'modo_treino_ativado'];
+      if (publicKeys.includes(row.chave)) {
+          if (row.valor === 'true') acc[row.chave] = true;
+          else if (row.valor === 'false') acc[row.chave] = false;
+          else acc[row.chave] = row.valor;
+      }
+      return acc;
+    }, {});
+    res.status(200).json(configs);
+  } catch (error) {
+    console.error("Erro ao buscar configurações públicas:", error);
+    res.status(500).json({ error: "Erro interno do servidor." });
+  }
+};
+
+/**
  * Controller para buscar a configuração 'feedback_detalhado_ativo'.
  */
 export const getFeedbackConfigController = async (req, res) => {
@@ -13,7 +36,6 @@ export const getFeedbackConfigController = async (req, res) => {
     const sql = "SELECT valor FROM configuracoes WHERE chave = ?";
     const result = await dbGet(sql, [key]);
 
-    // O valor no banco é uma string 'true' ou 'false'. Convertemos para booleano.
     const isActive = result ? result.valor === 'true' : false;
 
     res.status(200).json({ value: isActive });
@@ -33,7 +55,6 @@ export const getTopScoresTodayController = async (req, res) => {
       return res.status(400).json({ error: 'telegram_id é obrigatório.' });
     }
 
-    // A função DATE('now', 'localtime') do SQLite pega a data atual no fuso do servidor.
     const sql = `
       SELECT r.pontos
       FROM resultados r
@@ -46,8 +67,6 @@ export const getTopScoresTodayController = async (req, res) => {
     `;
 
     const rows = await dbAll(sql, [telegram_id]);
-
-    // O resultado 'rows' é um array de objetos. Usamos map para extrair apenas os pontos.
     const scores = rows.map(row => row.pontos);
 
     res.status(200).json(scores);

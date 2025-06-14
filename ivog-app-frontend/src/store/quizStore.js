@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '../services/api';
 import { useFeedbackStore } from './feedbackStore';
-import { useUserStore } from './userStore'; // 1. Importa o userStore
+import { useUserStore } from './userStore';
 
 const initialState = {
   quizData: null,
@@ -15,30 +15,24 @@ const initialState = {
 export const useQuizStore = create((set, get) => ({
   ...initialState,
 
-  // --- Ações do Store ---
-
-  startQuiz: async (desafioId, navigate) => {
+  startQuiz: async (searchParams, navigate) => {
     useFeedbackStore.getState().showLoading();
     set({ ...initialState, loading: true }); 
     
     try {
-      // 2. Obtém o perfil completo do usuário que já foi carregado no userStore
       const { userProfile } = useUserStore.getState();
-
       if (!userProfile || !userProfile.telegram_id) {
         throw new Error('Perfil do usuário não carregado. Tente novamente.');
       }
       
-      // 3. Monta os parâmetros da requisição com todos os dados necessários
       const params = { 
         telegram_id: userProfile.telegram_id,
         cargo: userProfile.cargo,
-        canal_principal: userProfile.canal_principal
+        canal_principal: userProfile.canal_principal,
+        desafio_id: searchParams.get('desafio_id'),
+        is_training: searchParams.get('is_training'),
+        temas: searchParams.get('temas'),
       };
-
-      if (desafioId) {
-        params.desafio_id = desafioId;
-      }
 
       const response = await api.get('/quiz/start', { params });
       

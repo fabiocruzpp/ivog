@@ -93,3 +93,31 @@ export const getCargos = (canal, tipoParceiro) => {
     }
     return [];
 };
+
+// --- NOVAS FUNÇÕES ---
+
+/**
+ * Retorna uma lista com todos os nomes de canais únicos do cargos.json.
+ */
+export const getAllCanais = () => {
+    return Object.keys(cargosData).sort();
+};
+
+/**
+ * Retorna uma lista com todos os nomes de cargos únicos do cargos.json.
+ */
+export const getAllCargos = () => {
+    const cargos = new Set();
+    Object.values(cargosData).forEach(value => {
+        if (Array.isArray(value)) {
+            value.forEach(cargo => cargos.add(cargo));
+        } else if (typeof value === 'object') {
+            Object.values(value).forEach(subValue => {
+                if (Array.isArray(subValue)) {
+                    subValue.forEach(cargo => cargos.add(cargo));
+                }
+            });
+        }
+    });
+    return Array.from(cargos).sort();
+};

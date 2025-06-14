@@ -3,19 +3,23 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from './store/userStore';
+import { useConfigStore } from './store/configStore';
 
-// Componentes
+// Componentes de Página
 import Dashboard from './pages/Dashboard';
 import QuizPage from './pages/QuizPage';
 import RankingPage from './pages/RankingPage';
 import StatsPage from './pages/StatsPage';
-import ProfilePage from './pages/ProfilePage'; // LINHA CORRIGIDA/ADICIONADA
+import ProfilePage from './pages/ProfilePage';
 import ResultsPage from './pages/ResultsPage';
 import AdminPage from './pages/AdminPage';
 import ChallengesPage from './pages/ChallengesPage.jsx';
 import RegisterPage from './pages/RegisterPage';
 import QuestionManagerPage from './pages/QuestionManagerPage';
 import LoginPage from './pages/LoginPage';
+import TrainingLobbyPage from './pages/TrainingLobbyPage';
+
+// Componentes Globais
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalFeedback from './components/GlobalFeedback';
 import Header from './components/Header';
@@ -28,13 +32,9 @@ const PageLayout = () => {
   return (
     <>
       {showHeader && <Header />}
-      {/* Aplica a classe de padding condicionalmente */}
       <main className={showHeader ? "main-container-with-header" : ""}>
         <Routes>
-          {/* Rota de Login para a versão Web */}
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* Rotas Públicas/do App Telegram */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/quiz" element={<QuizPage />} />
@@ -43,8 +43,8 @@ const PageLayout = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/quiz/results" element={<ResultsPage />} />
           <Route path="/challenges" element={<ChallengesPage />} />
+          <Route path="/training" element={<TrainingLobbyPage />} />
 
-          {/* Rotas de Admin Protegidas */}
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/questions" element={<QuestionManagerPage />} />
@@ -60,10 +60,12 @@ const PageLayout = () => {
 function AppLogic() {
   const navigate = useNavigate();
   const { fetchUser } = useUserStore();
+  const { fetchConfigs } = useConfigStore();
 
   useEffect(() => {
     fetchUser(navigate);
-  }, [fetchUser, navigate]);
+    fetchConfigs();
+  }, [fetchUser, navigate, fetchConfigs]);
   
   return null;
 }
@@ -82,7 +84,7 @@ function App() {
     <BrowserRouter>
       <GlobalFeedback />
       <AppLogic />
-      <PageLayout /> {/* Usa o novo componente de Layout */}
+      <PageLayout />
     </BrowserRouter>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 import styles from './AdminPage.module.css';
+import { useConfigStore } from '../store/configStore';
 
 const BackArrowIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
@@ -166,6 +167,8 @@ function AdminPage() {
     const [formOptions, setFormOptions] = useState({ temas: [], subtemas: [], cargos: [], canais: [] });
     const [telegramId, setTelegramId] = useState(null);
 
+    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore();
+
     useEffect(() => {
         const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (user && user.id) {
@@ -175,11 +178,11 @@ function AdminPage() {
 
     const fetchAllData = useCallback(async () => {
         const isWeb = !window.Telegram?.WebApp?.initData;
-        // CORREÇÃO: Não executa a busca se estiver no Telegram e o ID ainda não foi carregado.
         if (!isWeb && !telegramId) {
             return;
         }
 
+        setLoading(true);
         setMessage('');
         try {
             const params = telegramId ? { telegram_id: telegramId } : {};
@@ -252,12 +255,29 @@ function AdminPage() {
         }
     };
 
-    if (loading) return <p>Carregando painel de admin...</p>;
+    if (loading || loadingConfigs) return <p>Carregando painel de admin...</p>;
 
     return (
         <div className={styles.screenContainer}>
             <div className={styles.contentArea}>
                 {message && <p className={styles.message}>{message}</p>}
+
+                <div className={styles.adminSection}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>Configurações Gerais</h2>
+                    </div>
+                    <div className={styles.configToggle}>
+                        <span>Modo Treino</span>
+                        <label className={styles.switch}>
+                            <input 
+                                type="checkbox" 
+                                checked={configs.modo_treino_ativado || false}
+                                onChange={() => toggleConfig('modo_treino_ativado')}
+                            />
+                            <span className={styles.slider}></span>
+                        </label>
+                    </div>
+                </div>
 
                 <div className={styles.adminSection}>
                     <div className={styles.sectionHeader}>

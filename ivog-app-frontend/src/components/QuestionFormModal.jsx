@@ -22,16 +22,12 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question, telegramId }) 
         if (isOpen) {
             const fetchOptions = async () => {
                 try {
-                    // CORREÇÃO: Adiciona o telegram_id (se existir) aos parâmetros da requisição
                     const params = telegramId ? { telegram_id: telegramId } : {};
-                    
-                    const [canaisRes, cargosRes] = await Promise.all([
-                        api.get('/admin/challenge_options', { params: { ...params, type: 'canal_principal' } }),
-                        api.get('/admin/challenge_options', { params: { ...params, type: 'cargo' } })
-                    ]);
+                    // ATUALIZADO: Chamada única para o novo endpoint
+                    const response = await api.get('/admin/form-options', { params });
                     setOptions({
-                        canais: canaisRes.data,
-                        cargos: cargosRes.data
+                        canais: response.data.canais || [],
+                        cargos: response.data.cargos || []
                     });
                 } catch (error) {
                     console.error("Falha ao carregar opções para o formulário de perguntas", error);
@@ -39,7 +35,7 @@ function QuestionFormModal({ isOpen, onClose, onSubmit, question, telegramId }) 
             };
             fetchOptions();
         }
-    }, [isOpen, telegramId]); // Adiciona telegramId à lista de dependências
+    }, [isOpen, telegramId]);
 
     useEffect(() => {
         if (isOpen) {
