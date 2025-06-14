@@ -28,13 +28,16 @@ export const getTiposParceiroController = (req, res) => {
 
 export const getRedesController = (req, res) => {
     const { ddd, canal, tipoParceiro } = req.query;
-    // --- CORREÇÃO AQUI ---
-    // A validação foi ajustada. 'tipoParceiro' não é obrigatório para
-    // o fluxo do canal 'Distribuição'. Apenas 'ddd' e 'canal' são necessários.
     if (!ddd || !canal) {
         return res.status(400).json({ error: 'Os parâmetros DDD e CANAL são obrigatórios.' });
     }
     getOptions(req, res, optionsService.getRedes, ddd, canal, tipoParceiro);
+};
+
+export const getRedesAndParceirosController = (req, res) => {
+    const { ddd, canal } = req.query;
+    if (!ddd || !canal) return res.status(400).json({ error: 'Parâmetros DDD e CANAL são obrigatórios.' });
+    getOptions(req, res, optionsService.getRedesAndParceiros, ddd, canal);
 };
 
 export const getLojasController = (req, res) => {

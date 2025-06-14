@@ -1,0 +1,21 @@
+.card {
+    background-color: var(--secondary-white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.title {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--secondary-dark-grey);
+}
+
+.value {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--primary-dark-purple);
+}

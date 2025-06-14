@@ -1,0 +1,47 @@
+.dashboardContainer {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.loading {
+    padding: 40px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--secondary-dark-grey);
+}
+
+.kpiGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.tableGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.chartGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.chartContainer {
+    background-color: var(--secondary-white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    position: relative;
+    height: 350px;
+}
+
+.chartContainer h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--primary-dark-black);
+    font-size: 18px;
+}

@@ -1,0 +1,48 @@
+.filterBar {
+    background-color: var(--secondary-white);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filterGroup label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-dark-purple);
+}
+
+.filterSelect {
+    min-width: 150px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--secondary-dark-grey);
+    font-size: 14px;
+    font-family: inherit;
+    background-color: var(--primary-background);
+}
+
+.resetButton {
+    align-self: flex-end; /* Alinha com a parte de baixo dos selects */
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--secondary-soft-grey);
+    color: var(--primary-dark-black);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.resetButton:hover {
+    background-color: #e0e0e0;
+}

@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename);
 let locaisData = [];
 let cargosData = {};
 
-// Carrega os dados dos arquivos JSON para a memória uma única vez.
 const loadData = async () => {
     if (locaisData.length > 0 && Object.keys(cargosData).length > 0) {
         return;
@@ -27,16 +26,13 @@ const loadData = async () => {
         console.log('Dados de locais e cargos para o formulário carregados com sucesso.');
     } catch (error) {
         console.error('Falha ao carregar arquivos de dados (locais.json/cargos.json):', error);
-        // Em caso de erro, definimos como vazio para evitar que a aplicação quebre.
         locaisData = [];
         cargosData = {};
     }
 };
 
-// Inicializa o carregamento dos dados quando o serviço é importado.
 loadData();
 
-// Funções para obter as opções filtradas
 export const getDdds = () => {
     const ddds = [...new Set(locaisData.map(item => item.ddd))];
     return ddds.sort();
@@ -53,7 +49,6 @@ export const getTiposParceiro = (ddd, canal) => {
     const tipos = [...new Set(locaisData
         .filter(item => item.ddd === ddd && item.canal === canal && item.tipo_parceiro)
         .map(item => item.tipo_parceiro))];
-    // Adiciona as opções que não dependem de loja/rede
     tipos.push('PAP', 'GA', 'GA Multicanal');
     return [...new Set(tipos)].sort();
 };
@@ -61,12 +56,29 @@ export const getTiposParceiro = (ddd, canal) => {
 export const getRedes = (ddd, canal, tipoParceiro) => {
     const filterFn = tipoParceiro
         ? item => item.ddd === ddd && item.canal === canal && item.tipo_parceiro === tipoParceiro && item.rede
-        : item => item.ddd === ddd && item.canal === canal && item.rede; // Para Canal Distribuição
+        : item => item.ddd === ddd && item.canal === canal && item.rede;
 
     const redes = [...new Set(locaisData
         .filter(filterFn)
         .map(item => item.rede))];
     return redes.sort();
+};
+
+export const getRedesAndParceiros = (ddd, canal) => {
+    if (canal !== 'Parceiros') {
+        return getRedes(ddd, canal);
+    }
+    
+    const combinedList = new Set();
+    locaisData
+        .filter(item => item.ddd === ddd && item.canal === canal && item.tipo_parceiro === 'Parceiro Lojas' && item.rede)
+        .forEach(item => combinedList.add(item.rede));
+
+    combinedList.add('PAP');
+    combinedList.add('GA');
+    combinedList.add('GA Multicanal');
+
+    return Array.from(combinedList).sort();
 };
 
 export const getLojas = (ddd, canal, rede) => {
@@ -77,7 +89,7 @@ export const getLojas = (ddd, canal, rede) => {
     const lojas = [...new Set(locaisData
         .filter(filterFn)
         .map(item => item.loja)
-        .filter(Boolean))]; // .filter(Boolean) remove valores nulos/vazios
+        .filter(Boolean))];
     return lojas.sort();
 };
 
@@ -94,18 +106,10 @@ export const getCargos = (canal, tipoParceiro) => {
     return [];
 };
 
-// --- NOVAS FUNÇÕES ---
-
-/**
- * Retorna uma lista com todos os nomes de canais únicos do cargos.json.
- */
 export const getAllCanais = () => {
     return Object.keys(cargosData).sort();
 };
 
-/**
- * Retorna uma lista com todos os nomes de cargos únicos do cargos.json.
- */
 export const getAllCargos = () => {
     const cargos = new Set();
     Object.values(cargosData).forEach(value => {

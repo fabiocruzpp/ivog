@@ -16,7 +16,7 @@ import {
   deleteChallengeController,
   getAllChallengesForDebug,
   importQuestionsFromCsvController,
-  getQuestionFormOptionsController, // IMPORTADO
+  getQuestionFormOptionsController,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -25,7 +25,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.post(
-    '/admin/import-questions',
+    '/import-questions', // REMOVIDO /admin
     cors(),
     upload.single('csvfile'),
     requireAdminAccess,
@@ -34,20 +34,18 @@ router.post(
 
 router.use(requireAdminAccess);
 
-router.post('/admin/toggle_config/:key', toggleAdminConfigController);
-router.post('/admin/set_config/:key', setAdminConfigController);
-router.get('/admin/challenge_options', getChallengeOptionsController);
-router.post('/admin/challenge/activate', activateChallengeController);
-router.post('/admin/challenge/deactivate', deactivateChallengeController);
-router.get('/admin/all_distinct_challenges', getAllDistinctChallengesController);
-router.get('/admin/challenge_stats', getChallengeStatsController);
-router.post('/admin/challenges', createChallengeController);
-router.get('/admin/challenges', listChallengesController);
-router.put('/admin/challenges/:id', updateChallengeController);
-router.delete('/admin/challenges/:id', deleteChallengeController);
-router.get('/admin/debug/all_challenges', getAllChallengesForDebug);
-
-// ROTA ADICIONADA
-router.get('/admin/form-options', getQuestionFormOptionsController);
+router.post('/toggle_config/:key', toggleAdminConfigController); // REMOVIDO /admin
+router.post('/set_config/:key', setAdminConfigController); // REMOVIDO /admin
+router.get('/challenge_options', getChallengeOptionsController); // REMOVIDO /admin
+router.post('/challenge/activate', activateChallengeController); // REMOVIDO /admin
+router.post('/challenge/deactivate', deactivateChallengeController); // REMOVIDO /admin
+router.get('/all_distinct_challenges', getAllDistinctChallengesController); // REMOVIDO /admin
+router.get('/challenge_stats', getChallengeStatsController); // REMOVIDO /admin
+router.post('/challenges', createChallengeController); // REMOVIDO /admin
+router.get('/challenges', listChallengesController); // REMOVIDO /admin
+router.put('/challenges/:id', updateChallengeController); // REMOVIDO /admin
+router.delete('/challenges/:id', deleteChallengeController); // REMOVIDO /admin
+router.get('/debug/all_challenges', getAllChallengesForDebug); // REMOVIDO /admin
+router.get('/form-options', getQuestionFormOptionsController); // REMOVIDO /admin
 
 export default router;
