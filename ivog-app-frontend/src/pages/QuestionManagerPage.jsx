@@ -220,10 +220,7 @@ function QuestionManagerPage() {
 
     return (
         <div className={styles.screenContainer}>
-            <div className={styles.headerBar}>
-                <Link to="/admin" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-                <h1 className={styles.screenTitle}>Gerenciar Perguntas</h1>
-            </div>
+            
             <div className={styles.contentArea}>
                 <div className={styles.toolbar}>
                     <div>

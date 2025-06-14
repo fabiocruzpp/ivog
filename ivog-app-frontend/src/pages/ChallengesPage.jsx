@@ -61,10 +61,7 @@ function ChallengesPage() {
 
     return (
         <div className={styles.screenContainer}>
-            <div className={styles.headerBar}>
-                <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-                <h1 className={styles.screenTitle}>Meus Desafios</h1>
-            </div>
+            
             <div className={styles.contentArea}>
                 {renderContent()}
             </div>

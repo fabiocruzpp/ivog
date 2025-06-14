@@ -146,9 +146,7 @@ function RegisterPage() {
 
     return (
         <div className={styles.screenContainer}>
-            <div className={styles.headerBar}>
-                <h1 className={styles.screenTitle}>Bem-vindo ao IvoG!</h1>
-            </div>
+            
             <div className={styles.formContentArea}>
                 <p className={styles.formInstructions}>Complete o seu cadastro para começar a jogar e competir.</p>
                 <form onSubmit={handleSubmit}>

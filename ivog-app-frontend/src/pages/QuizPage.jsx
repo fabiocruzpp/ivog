@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './QuizPage.module.css';
+import { useQuizStore } from '../store/quizStore'; // 1. Importa o novo store
 
 const BackArrowIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
@@ -12,106 +12,32 @@ const PointsIcon = () => (
 );
 
 function QuizPage() {
-  const [quizData, setQuizData] = useState(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [score, setScore] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // 2. Extrai todo o estado e lógica do store do quiz
+  const {
+    quizData,
+    currentQuestionIndex,
+    score,
+    selectedAnswer,
+    loading,
+    error,
+    startQuiz,
+    handleAnswer,
+    resetQuiz
+  } = useQuizStore();
 
   useEffect(() => {
-    // Lê o ID do desafio da URL
     const desafioId = searchParams.get('desafio_id');
+    startQuiz(desafioId, navigate);
 
-    const startQuiz = async (telegramId) => {
-      try {
-        setLoading(true);
-        setError(''); // Limpa erros anteriores
-        
-        const userProfileResponse = await api.get(`/user/${telegramId}`);
-        const { cargo, canal_principal } = userProfileResponse.data;
-
-        if (!cargo || !canal_principal) throw new Error("Perfil incompleto. Por favor, atualize seus dados.");
-
-        const params = {
-          telegram_id: telegramId,
-          cargo,
-          canal_principal,
-        };
-        // Se um ID de desafio existir, o envia para a API
-        if (desafioId) {
-          params.desafio_id = desafioId;
-        }
-
-        const quizResponse = await api.get('/quiz/start', { params });
-        setQuizData(quizResponse.data);
-
-      } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Não foi possível iniciar o quiz.');
-      } finally {
-        setLoading(false);
-      }
+    // 3. Retorna uma função de limpeza que reseta o estado do quiz
+    //    ao sair da página. Isso é crucial.
+    return () => {
+      resetQuiz();
     };
-
-    const user = window.Telegram.WebApp.initDataUnsafe?.user;
-    if (user && user.id) {
-      startQuiz(user.id);
-    } else {
-      setError('ID do Telegram não encontrado.');
-      setLoading(false);
-    }
-  }, [searchParams]); // Roda o efeito sempre que os parâmetros da URL mudam
-
-  const handleAnswer = async (selectedOption) => {
-    if (selectedAnswer) return;
-    setSelectedAnswer(selectedOption);
-    const currentQuestion = quizData.questions[currentQuestionIndex];
-    const correct = selectedOption === currentQuestion.correta;
-    if (correct) setScore(prevScore => prevScore + 1);
-    try {
-      await api.post('/quiz/answer', {
-        simulado_id: quizData.simulado_id,
-        telegram_id: window.Telegram.WebApp.initDataUnsafe.user.id,
-        pergunta: currentQuestion.pergunta_formatada_display,
-        resposta_usuario: selectedOption,
-        resposta_correta: currentQuestion.correta,
-        acertou: correct,
-        tema: currentQuestion.tema,
-        subtema: currentQuestion.subtema,
-      });
-    } catch (error) {
-      console.error("Erro ao salvar resposta:", error);
-    }
-    setTimeout(goToNextQuestion, 1500);
-  };
-
-  const goToNextQuestion = () => {
-    const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < quizData.questions.length) {
-      setCurrentQuestionIndex(nextIndex);
-      setSelectedAnswer(null);
-    } else {
-      finishQuiz();
-    }
-  };
-
-  const finishQuiz = async () => {
-    setLoading(true);
-    try {
-      const response = await api.post('/quiz/finish', {
-        telegram_id: window.Telegram.WebApp.initDataUnsafe.user.id,
-        simulado_id: quizData.simulado_id,
-        num_acertos: score,
-        total_perguntas: quizData.questions.length
-      });
-      navigate('/quiz/results', { state: { results: response.data } });
-    } catch (err) {
-      setError("Erro ao finalizar o quiz.");
-      setLoading(false);
-    }
-  };
+  }, [searchParams, startQuiz, resetQuiz, navigate]); // Dependências do efeito
 
   const getButtonClassName = (option) => {
     if (!selectedAnswer) return styles.answerOption;
@@ -121,27 +47,23 @@ function QuizPage() {
     return styles.answerOption;
   };
 
+  // Lógica de renderização simplificada
   if (loading) return <p style={{ textAlign: 'center' }}>Preparando seu quiz...</p>;
+  
   if (error) return (
     <div style={{ textAlign: 'center' }}>
       <p style={{ color: 'red' }}>{error}</p>
       <Link to="/">Voltar</Link>
     </div>
   );
-  if (!quizData || quizData.questions.length === 0) return (
-    <div style={{ textAlign: 'center' }}>
-      <p>Nenhuma pergunta disponível.</p>
-      <Link to="/">Voltar</Link>
-    </div>
-  );
+
+  // A verificação de `quizData` previne erros antes da API responder
+  if (!quizData) return null;
 
   const currentQuestion = quizData.questions[currentQuestionIndex];
   return (
     <div className={styles.screenContainer}>
-        <div className={styles.headerBar}>
-            <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-            <h1 className={styles.screenTitle}>Simulado</h1>
-        </div>
+        
         <div className={styles.infoBar}>
             <div className={styles.questionCounter}>Q {currentQuestionIndex + 1}/{quizData.total_perguntas_no_simulado}</div>
             <div className={styles.topicDisplay}>
@@ -155,7 +77,8 @@ function QuizPage() {
             <div className={styles.optionsContainer}>
                 {currentQuestion.alternativas.map((alternativa) => (
                     <button key={alternativa} className={getButtonClassName(alternativa)}
-                        onClick={() => handleAnswer(alternativa)} disabled={!!selectedAnswer}>
+                        onClick={() => handleAnswer(alternativa, navigate)} // 4. Dispara a ação do store
+                        disabled={!!selectedAnswer}>
                         {alternativa}
                     </button>
                 ))}

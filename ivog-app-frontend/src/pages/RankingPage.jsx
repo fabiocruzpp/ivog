@@ -1,26 +1,18 @@
 // ivog-app-frontend/src/pages/RankingPage.jsx
 
 import React, { useState, useEffect } from 'react';
-// CORREÇÃO: Caminhos de importação ajustados para serem absolutos a partir da raiz do projeto,
-// o que resolve o erro de compilação "Could not resolve".
 import api from '/src/services/api.js';
-import { Link } from 'react-router-dom';
 import styles from '/src/pages/RankingPage.module.css';
 
-const BackArrowIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
-  </svg>
-);
+// O BackArrowIcon e o Link do react-router-dom foram removidos
 
 function RankingPage() {
   const [periodo, setPeriodo] = useState('semanal');
-  const [canal, setCanal] = useState('Geral'); // Estado para a aba de canal, 'Geral' é o padrão
+  const [canal, setCanal] = useState('Geral');
   const [ranking, setRanking] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Busca o canal do utilizador para definir a aba ativa
   useEffect(() => {
     const fetchUserCanal = async () => {
         try {
@@ -29,18 +21,16 @@ function RankingPage() {
             if (user && user.id) {
                 const response = await api.get(`/user/${user.id}`);
                 if (response.data && response.data.canal_principal) {
-                    setCanal(response.data.canal_principal); // Define a aba ativa com o canal do utilizador
+                    setCanal(response.data.canal_principal);
                 }
             }
         } catch (err) {
             console.error("Não foi possível buscar o canal do utilizador.", err);
-            // Mantém 'Geral' como padrão em caso de erro
         }
     };
     fetchUserCanal();
   }, []);
 
-  // Busca o ranking sempre que o período ou o canal mudar
   useEffect(() => {
     const fetchRanking = async () => {
       try {
@@ -62,7 +52,7 @@ function RankingPage() {
       }
     };
     fetchRanking();
-  }, [periodo, canal]); // Depende de periodo e canal
+  }, [periodo, canal]);
 
   const getRankClassName = (index) => {
     if (index === 0) return `${styles.rankBadge} ${styles.rank1}`;
@@ -91,15 +81,8 @@ function RankingPage() {
   
   return (
     <div className={styles.screenContainer}>
-      <div className={styles.headerBar}>
-        <Link to="/" className={styles.headerIconBtn}>
-          <BackArrowIcon />
-        </Link>
-        <h1 className={styles.screenTitle}>Leaderboard</h1>
-      </div>
-
+      {/* O headerBar antigo foi removido daqui */}
       <div className={styles.contentArea}>
-        {/* Abas para os Canais */}
         <div className={styles.tabsContainer}>
             <button onClick={() => setCanal('Geral')} className={`${styles.tabButton} ${canal === 'Geral' ? styles.active : ''}`}>Geral</button>
             <button onClick={() => setCanal('Loja Própria')} className={`${styles.tabButton} ${canal === 'Loja Própria' ? styles.active : ''}`}>Loja Própria</button>
@@ -107,7 +90,6 @@ function RankingPage() {
             <button onClick={() => setCanal('Distribuição')} className={`${styles.tabButton} ${canal === 'Distribuição' ? styles.active : ''}`}>Distribuição</button>
         </div>
         
-        {/* Abas para o Período */}
         <div className={styles.tabsContainer}>
           <button onClick={() => setPeriodo('semanal')} className={`${styles.tabButton} ${periodo === 'semanal' ? styles.active : ''}`}>Semanal</button>
           <button onClick={() => setPeriodo('mensal')} className={`${styles.tabButton} ${periodo === 'mensal' ? styles.active : ''}`}>Mensal</button>

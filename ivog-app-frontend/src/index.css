@@ -40,3 +40,13 @@ body {
     height: 100%;
     padding: 0px;
 }
+
+main {
+    height: 100%;
+}
+
+.main-container-with-header {
+  padding-top: 60px; /* Altura do nosso novo header */
+  height: 100%;
+  box-sizing: border-box;
+}

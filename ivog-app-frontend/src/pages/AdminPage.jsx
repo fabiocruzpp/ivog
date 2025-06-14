@@ -256,11 +256,6 @@ function AdminPage() {
 
     return (
         <div className={styles.screenContainer}>
-            <div className={styles.headerBar}>
-                <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-                <h1 className={styles.screenTitle}>Painel de Admin</h1>
-            </div>
-
             <div className={styles.contentArea}>
                 {message && <p className={styles.message}>{message}</p>}
 

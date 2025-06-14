@@ -1,34 +1,144 @@
 .screenContainer {
-    display: flex; flex-direction: column; align-items: center;
-    text-align: center; flex-grow: 1; width: 100%;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--primary-background);
 }
+
 .header {
-    background-color: var(--primary-dark-purple); color: var(--secondary-white);
-    padding: 40px 20px; width: 100%;
-    border-bottom-left-radius: 35px; border-bottom-right-radius: 35px;
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+    padding: 30px 20px 60px 20px; /* Aumenta o padding inferior */
+    width: 100%;
+    border-bottom-left-radius: 35px;
+    border-bottom-right-radius: 35px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
+    text-align: center;
 }
-.header h2 { font-size: 28px; font-weight: 700; margin-bottom: 10px; color: var(--secondary-white); }
-.header p { font-size: 16px; color: var(--primary-light-purple); margin: 0; opacity: 0.9; }
+
+.header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--secondary-white);
+}
+
+.header p {
+    font-size: 15px;
+    color: var(--primary-light-purple);
+    margin: 0;
+    opacity: 0.9;
+}
+
 .content {
-    padding: 20px; border-radius: 12px; width: 90%;
-    max-width: 450px; display: flex; flex-direction: column;
-    gap: 15px; align-items: center; margin-top: -50px; /* Efeito de sobreposição */
-    background-color: var(--secondary-white); box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background-color: var(--secondary-white);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    margin-top: -40px; /* Efeito de sobreposição */
+    z-index: 10;
 }
+
 .scoreSummary {
-    font-size: 16px; font-weight: 500; color: var(--primary-dark-black);
-    line-height: 1.7; width: 100%;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--primary-dark-black);
+    line-height: 1.6;
+    width: 100%;
+    text-align: center;
 }
-.scoreSummary p { margin: 4px 0; }
-.scoreSummary strong { color: var(--primary-dark-purple); font-weight: 700; }
-.finalScore { font-size: 24px !important; color: var(--primary-dark-purple); }
+
+.scoreSummary p {
+    margin: 4px 0;
+}
+
+.scoreSummary strong {
+    font-weight: 700;
+}
+
+.highlightScore strong {
+    color: var(--primary-dark-purple);
+    font-size: 18px;
+}
+
+.finalScore {
+    color: var(--primary-dark-purple);
+    font-size: 16px;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+}
+
+.topScoresSection {
+    background-color: var(--primary-background);
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-sizing: border-box;
+    font-size: 13px;
+    color: var(--secondary-dark-grey);
+}
+
+.topScoresSection p {
+    margin: 0 0 10px 0;
+    font-weight: 500;
+}
+
+.scoresList {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-dark-purple);
+}
+
 .actionButton {
-    font-family: var(--font-family-poppins); padding: 14px 20px;
-    border-radius: 28px; border: none; font-size: 16px;
-    font-weight: 600; cursor: pointer; text-align: center;
-    transition: background-color 0.2s; text-decoration: none;
-    width: 100%; max-width: 280px; box-sizing: border-box;
-    background-color: var(--primary-dark-purple); color: var(--secondary-white);
+    font-family: var(--font-family-poppins);
+    padding: 14px 20px;
+    border-radius: 28px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    text-decoration: none;
+    width: 100%;
+    max-width: 300px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.statsButton {
+    background-color: var(--primary-dark-purple);
+    color: var(--secondary-white);
+}
+
+.statsButton:hover {
+    background-color: #5a28a0;
+}
+
+.homeButton {
+    background-color: transparent;
+    color: var(--secondary-dark-grey);
+    font-weight: 500;
+    margin-top: -5px;
+}
+
+.homeButton:hover {
+    color: var(--primary-dark-black);
 }

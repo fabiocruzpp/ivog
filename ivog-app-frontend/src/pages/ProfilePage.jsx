@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 import styles from './ProfilePage.module.css';
+import { useFeedbackStore } from '../store/feedbackStore'; // Importa o store de feedback
 
 const BackArrowIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
@@ -30,7 +31,8 @@ const FormInput = ({ label, name, value, onChange, disabled = false, placeholder
 function ProfilePage() {
     const [telegramId, setTelegramId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState('');
+    // Remove o estado de mensagem local: const [message, setMessage] = useState('');
+    const { addToast } = useFeedbackStore(); // Usa a ação do store
 
     const [formData, setFormData] = useState({
         first_name: '', ddd: '', canal_principal: '', tipo_parceiro: '',
@@ -71,19 +73,19 @@ function ProfilePage() {
                        setFormData(prev => ({ ...prev, ...profileRes.data }));
                     }
                 } catch (error) {
-                    setMessage('Falha ao carregar dados.');
+                    addToast('Falha ao carregar dados.', 'error');
                 } finally {
                     setLoading(false);
                 }
             };
             fetchInitialData();
         } else {
-            setMessage('Não foi possível identificar o utilizador.');
+            addToast('Não foi possível identificar o utilizador.', 'error');
             setLoading(false);
         }
-    }, []);
+    }, [addToast]); // Adiciona addToast às dependências
 
-    // 2. Efeitos em cascata para carregar as opções dos dropdowns seguintes
+    // Efeitos em cascata permanecem os mesmos...
     useEffect(() => {
         if (formData.ddd) {
             api.get(`/options/canais?ddd=${formData.ddd}`).then(res => {
@@ -133,13 +135,14 @@ function ProfilePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage('A gravar...');
+        useFeedbackStore.getState().showLoading();
         try {
             await api.post('/register', { ...formData, telegram_id: telegramId });
-            setMessage('Perfil gravado com sucesso!');
-            setTimeout(() => setMessage(''), 3000);
+            addToast('Perfil gravado com sucesso!', 'success');
         } catch (error) {
-            setMessage('Erro ao gravar o perfil. Tente novamente.');
+            addToast('Erro ao gravar o perfil. Tente novamente.', 'error');
+        } finally {
+            useFeedbackStore.getState().hideLoading();
         }
     };
 
@@ -151,10 +154,6 @@ function ProfilePage() {
 
     return (
         <div className={styles.screenContainer}>
-            <div className={styles.headerBar}>
-                <Link to="/" className={styles.headerIconBtn}><BackArrowIcon /></Link>
-                <h1 className={styles.screenTitle}>Atualizar Dados</h1>
-            </div>
             <div className={styles.formContentArea}>
                 <p className={styles.formInstructions}>Mantenha os seus dados atualizados para uma experiência completa.</p>
                 <form onSubmit={handleSubmit}>
@@ -169,7 +168,7 @@ function ProfilePage() {
                     {showCargo && <FormSelect label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} options={options.cargos} defaultOptionText="Selecione o Cargo" />}
                     
                     <button type="submit" className={styles.submitButton}>Gravar Alterações</button>
-                    {message && <p className={styles.messageFeedback}>{message}</p>}
+                    {/* O feedback agora é global e não precisa mais ser renderizado aqui */}
                 </form>
             </div>
         </div>

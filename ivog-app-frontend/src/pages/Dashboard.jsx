@@ -1,69 +1,26 @@
 // ivog-app-frontend/src/pages/Dashboard.jsx
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import React from 'react'; // Não precisa mais de useEffect
+import { Link } from 'react-router-dom'; // Não precisa mais de useNavigate
 import styles from './Dashboard.module.css';
-
-const ADMIN_TELEGRAM_ID = '1318210843';
+import { useUserStore } from '../store/userStore';
 
 function Dashboard() {
-  const [user, setUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  // Consome o estado do store, que já foi (ou está sendo) preenchido pelo App.jsx
+  const { user, isAdmin, error } = useUserStore();
 
-  useEffect(() => {
-    const checkUserRegistration = async () => {
-      try {
-        const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+  // O useEffect que chamava `fetchUser` foi removido daqui.
 
-        if (!telegramUser || !telegramUser.id) {
-          throw new Error('Não foi possível identificar seu usuário no Telegram.');
-        }
-
-        setUser(telegramUser);
-        if (telegramUser.id.toString() === ADMIN_TELEGRAM_ID) {
-          setIsAdmin(true);
-        }
-
-        // Verifica o perfil do usuário na nossa API
-        try {
-          const response = await api.get(`/user/${telegramUser.id}`);
-          // Se o usuário existe mas não tem um cargo, ele não completou o cadastro
-          if (!response.data || !response.data.cargo) {
-            navigate('/register');
-          }
-        } catch (apiError) {
-          // Se der 404, o usuário não existe no nosso banco
-          if (apiError.response && apiError.response.status === 404) {
-            navigate('/register');
-          } else {
-            // Outro erro de API
-            throw new Error('Não foi possível verificar seu cadastro. Tente novamente mais tarde.');
-          }
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUserRegistration();
-  }, [navigate]);
-
-  if (loading) {
-    return <p style={{textAlign: 'center', padding: '20px'}}>A verificar os seus dados...</p>;
-  }
-
+  // A tela de carregamento global já está cuidando do estado inicial.
+  // Se houver um erro na busca inicial do usuário, mostramos aqui.
   if (error) {
     return <p style={{textAlign: 'center', padding: '20px', color: 'red'}}>{error}</p>;
   }
 
+  // Se o usuário ainda não foi carregado (e não houve erro),
+  // o spinner global estará ativo, então podemos retornar null aqui para evitar o flash.
   if (!user) {
-    return <p style={{textAlign: 'center', padding: '20px'}}>A carregar...</p>;
+    return null; 
   }
 
   return (

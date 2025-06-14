@@ -1,14 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import styles from './ResultsPage.module.css';
+import { useUserStore } from '../store/userStore';
+import api from '../services/api';
+
+// Ícones para os botões
+const StatsIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"></path></svg>;
+const HomeIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"></path></svg>;
 
 function ResultsPage() {
   const location = useLocation();
   const { results } = location.state || {};
+  const { user } = useUserStore(); // Busca o usuário do store global
+
+  const [topTodayScores, setTopTodayScores] = useState([]);
+
+  useEffect(() => {
+    // Busca as 3 melhores pontuações do dia
+    if (user && user.id) {
+      api.get('/user_stats/top_scores_today', { params: { telegram_id: user.id } })
+        .then(response => {
+          setTopTodayScores(response.data);
+        })
+        .catch(err => {
+          console.error("Falha ao buscar pontuações do dia:", err);
+        });
+    }
+  }, [user]);
 
   if (!results) {
     return (
-      <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div className={styles.container}>
         <p>Nenhum resultado para exibir.</p>
         <Link to="/">Voltar ao Menu</Link>
       </div>
@@ -21,19 +43,37 @@ function ResultsPage() {
   return (
     <div className={styles.screenContainer}>
         <div className={styles.header}>
-            <h2>Parabéns!</h2>
+            <h2>Parabéns, {user?.first_name || ''}!</h2>
             <p>Você concluiu o simulado!</p>
         </div>
         <div className={styles.content}>
             <div className={styles.scoreSummary}>
                 <p>Você acertou</p>
-                <p><strong>{results.num_acertos} de {results.total_perguntas} ({percentualAcerto}%)</strong></p>
-                <hr style={{ border: 0, borderTop: '1px solid #eee', margin: '15px 0' }} />
+                <p className={styles.highlightScore}><strong>{results.num_acertos} de {results.total_perguntas} ({percentualAcerto}%)</strong></p>
+                <hr className={styles.divider} />
                 <p>Sua pontuação: <strong>{results.pontuacao_base} Pts</strong></p>
                 {pontosBonus > 0 && <p>Bônus por Desempenho: <strong>+{pontosBonus} Pts</strong></p>}
-                <p className={styles.finalScore}>Total: <strong>{results.pontuacao_final_com_bonus} Pts</strong></p>
+                <p>Total: <strong className={styles.finalScore}>{results.pontuacao_final_com_bonus} Pts</strong></p>
             </div>
-            <Link to="/" className={styles.actionButton}>Voltar ao Menu</Link>
+            
+            <div className={styles.topScoresSection}>
+                <p>Suas 3 melhores pontuações do dia (Simulados Normais):</p>
+                <div className={styles.scoresList}>
+                    {topTodayScores.length > 0 
+                        ? topTodayScores.map((score, index) => <span key={index} className={styles.scoreItem}>{score} Pts</span>)
+                        : <span>-</span>
+                    }
+                </div>
+            </div>
+
+            <Link to="/stats" className={`${styles.actionButton} ${styles.statsButton}`}>
+                <StatsIcon />
+                Ver Minhas Estatísticas
+            </Link>
+            <Link to="/" className={`${styles.actionButton} ${styles.homeButton}`}>
+                <HomeIcon />
+                Voltar ao Menu Principal
+            </Link>
         </div>
     </div>
   );
