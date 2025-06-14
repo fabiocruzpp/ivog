@@ -41,7 +41,7 @@ export const getAdminConfigsController = async (req, res) => {
 export const toggleAdminConfigController = async (req, res) => {
   try {
     const { key } = req.params;
-    const validKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo', 'modo_treino_ativado'];
+    const validKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo', 'modo_treino_ativado', 'pills_broadcast_enabled'];
     if (!validKeys.includes(key)) {
       return res.status(400).json({ error: "Chave de configuração inválida." });
     }
@@ -63,12 +63,12 @@ export const setAdminConfigController = async (req, res) => {
     try {
         const { key } = req.params;
         const { value } = req.body;
-        const validKeys = ['num_max_perguntas_simulado'];
+        const validKeys = ['num_max_perguntas_simulado', 'pills_broadcast_interval_minutes'];
         if (!validKeys.includes(key)) {
             return res.status(400).json({ error: "Chave de configuração inválida para esta operação." });
         }
-        if (value === undefined) {
-            return res.status(400).json({ error: "O campo 'value' é obrigatório no corpo da requisição." });
+        if (value === undefined || value === '' || Number(value) < 1) {
+            return res.status(400).json({ error: "Um valor válido é obrigatório." });
         }
         await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", [key, value.toString()]);
         res.status(200).json({ status: "success", message: `Configuração '${key}' atualizada para '${value}'.` });
@@ -354,7 +354,7 @@ export const importQuestionsFromCsvController = (req, res) => {
 
             try {
                 await dbRun('BEGIN TRANSACTION');
-
+                
                 const stmt = db.prepare(`INSERT INTO perguntas (pergunta_formatada_display, alternativas, correta, publico, canal, tema, subtema, feedback, fonte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
                 
                 let addedCount = 0;

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import api from '../services/api';
-import { useUserStore } from './userStore'; // 1. Importa o userStore para pegar o ID
 
 export const useConfigStore = create((set) => ({
   configs: {},
@@ -19,14 +18,7 @@ export const useConfigStore = create((set) => ({
   
   toggleConfig: async (key) => {
     try {
-        // 2. Obtém o ID do usuário logado diretamente do userStore
-        const telegramId = useUserStore.getState().user?.id;
-
-        // 3. Envia o telegram_id no corpo da requisição POST
-        const response = await api.post(`/admin/toggle_config/${key}`, {
-             telegram_id: telegramId 
-        });
-
+        const response = await api.post(`/admin/toggle_config/${key}`);
         if (response.data.status === 'success') {
             set(state => ({
                 configs: {
@@ -37,6 +29,24 @@ export const useConfigStore = create((set) => ({
         }
     } catch (error) {
         console.error(`Falha ao alternar a configuração ${key}:`, error);
+    }
+  },
+
+  // NOVA AÇÃO
+  setConfigValue: async (key, value) => {
+    try {
+        const response = await api.post(`/admin/set_config/${key}`, { value });
+        if (response.data.status === 'success') {
+            set(state => ({
+                configs: {
+                    ...state.configs,
+                    [key]: value,
+                }
+            }));
+        }
+    } catch (error) {
+        console.error(`Falha ao definir o valor da configuração ${key}:`, error);
+        throw error; // Lança o erro para o componente poder tratá-lo (ex: mostrar toast)
     }
   }
 }));

@@ -3,38 +3,43 @@ import jwt from 'jsonwebtoken';
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '1318210843';
 
 export const requireAdminAccess = (req, res, next) => {
-    // Permite que as requisições de 'sondagem' (pre-flight) do CORS passem sem autenticação.
+    // Permite que as requisições de 'sondagem' (pre-flight) do CORS passem.
     if (req.method === 'OPTIONS') {
         return next();
     }
 
-    // --- LÓGICA REESTRUTURADA ---
+    // --- LÓGICA DE AUTENTICAÇÃO CORRIGIDA E REORDENADA ---
 
-    // 1. Tenta verificar se é o admin acessando de dentro do app Telegram
-    const telegramId = (req.body && req.body.telegram_id) || (req.query && req.query.telegram_id);
-    if (telegramId && telegramId.toString() === ADMIN_TELEGRAM_ID) {
-        return next(); // É o admin via app, acesso concedido.
-    }
-
-    // 2. Se não for o admin via app, procura por um token JWT (acesso web)
+    // 1. Prioriza a verificação do token JWT para o painel web.
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
 
+        // jwt.verify é assíncrono, então tratamos tudo dentro do callback.
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
-                // Token existe mas é inválido (expirado, assinatura incorreta, etc.)
+                // Token é inválido, expirado, etc.
                 return res.status(403).json({ error: "Acesso negado. Token inválido ou expirado." });
             }
 
-            // Token é válido e o usuário é admin
+            // Token é válido, verificamos se o usuário tem a permissão de 'admin'.
             if (decoded.user?.role === 'admin') {
                 req.user = decoded.user;
-                return next(); // É o admin via web, acesso concedido.
+                return next(); // Acesso concedido!
+            } else {
+                // Token válido, mas o usuário não tem a permissão necessária.
+                return res.status(403).json({ error: "Acesso negado. Permissões insuficientes." });
             }
         });
-    } else {
-         // 3. Se não encontrou nem ID de admin nem token válido, nega o acesso.
-        return res.status(401).json({ error: "Acesso não autorizado. Credenciais ausentes." });
+        return; // Impede que o código continue para a verificação do telegram_id.
     }
+
+    // 2. Se não houver token, verifica se é o admin usando o app dentro do Telegram.
+    const telegramId = (req.body && req.body.telegram_id) || (req.query && req.query.telegram_id);
+    if (telegramId && telegramId.toString() === ADMIN_TELEGRAM_ID) {
+        return next(); // Acesso concedido para o super admin via app.
+    }
+
+    // 3. Se nenhum dos métodos de autenticação funcionar, nega o acesso.
+    return res.status(401).json({ error: "Acesso não autorizado. Credenciais de administrador ausentes." });
 };

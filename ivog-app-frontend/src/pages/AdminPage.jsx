@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import styles from './AdminPage.module.css';
 import { useConfigStore } from '../store/configStore';
 import { useFeedbackStore } from '../store/feedbackStore';
-import { useUserStore } from '../store/userStore'; // Importado para obter o usuário atual
+import { useUserStore } from '../store/userStore';
+import PillFormModal from '../components/PillFormModal';
 
 const getInitialFormData = () => ({
     id: null,
@@ -160,9 +161,8 @@ function AdminManagement() {
     const [admins, setAdmins] = useState([]);
     const [newAdminId, setNewAdminId] = useState('');
     const { addToast } = useFeedbackStore();
-    const { user } = useUserStore(); // Pega o usuário logado do store
+    const { user } = useUserStore();
 
-    // Define o ID do super administrador
     const SUPER_ADMIN_ID = '1318210843';
     const isSuperAdmin = user?.id.toString() === SUPER_ADMIN_ID;
 
@@ -214,12 +214,12 @@ function AdminManagement() {
                     onChange={(e) => setNewAdminId(e.target.value)}
                     placeholder="ID do Telegram do novo admin"
                     className={styles.adminInput}
-                    disabled={!isSuperAdmin} // Desabilitado se não for super admin
+                    disabled={!isSuperAdmin}
                 />
                 <button 
                     type="submit" 
                     className={styles.primaryButton}
-                    disabled={!isSuperAdmin} // Desabilitado se não for super admin
+                    disabled={!isSuperAdmin}
                 >
                     Adicionar
                 </button>
@@ -231,7 +231,6 @@ function AdminManagement() {
                         <button 
                             onClick={() => handleRemoveAdmin(admin.telegram_id)} 
                             className={styles.deleteButtonSmall}
-                            // Desabilitado se não for super admin OU se for o próprio super admin
                             disabled={!isSuperAdmin || admin.telegram_id.toString() === SUPER_ADMIN_ID}
                         >
                             Remover
@@ -243,100 +242,349 @@ function AdminManagement() {
     );
 }
 
+function KnowledgePillsManagement() {
+    const [pills, setPills] = useState([]);
+    const [csvFile, setCsvFile] = useState(null);
+    const [mediaFiles, setMediaFiles] = useState(null);
+    const { addToast, showLoading, hideLoading } = useFeedbackStore();
+    const { configs, toggleConfig, setConfigValue } = useConfigStore();
+    const csvInputRef = React.useRef(null);
+    const mediaInputRef = React.useRef(null);
+    const [isPillModalOpen, setIsPillModalOpen] = useState(false);
+    const [editingPill, setEditingPill] = useState(null);
+    const [selectedPillIds, setSelectedPillIds] = useState([]);
+    const [intervalMinutes, setIntervalMinutes] = useState('');
+
+    useEffect(() => {
+        if(configs.pills_broadcast_interval_minutes) {
+            setIntervalMinutes(configs.pills_broadcast_interval_minutes);
+        }
+    }, [configs.pills_broadcast_interval_minutes]);
+    
+    const fetchPills = useCallback(() => {
+        api.get('/admin/pills')
+            .then(res => setPills(res.data))
+            .catch(() => addToast('Erro ao carregar pílulas.', 'error'));
+    }, [addToast]);
+
+    useEffect(() => {
+        fetchPills();
+    }, [fetchPills]);
+
+    const handleImportCsv = async () => {
+        if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
+        const formData = new FormData();
+        formData.append('csvfile', csvFile);
+        
+        showLoading();
+        try {
+            const res = await api.post('/admin/pills/import-csv', formData);
+            addToast(res.data.message, 'success');
+            fetchPills();
+            setCsvFile(null);
+            if (csvInputRef.current) csvInputRef.current.value = null;
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao importar CSV.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handleSendNow = async () => {
+        if(window.confirm('Deseja enviar uma pílula para os usuários agora?')) {
+            showLoading();
+            try {
+                const res = await api.post('/admin/pills/send-now');
+                addToast(res.data.message, 'success');
+            } catch (err) {
+                addToast(err.response?.data?.error || 'Erro ao disparar envio.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+    };
+
+    const handleSaveInterval = async () => {
+        showLoading();
+        try {
+            await setConfigValue('pills_broadcast_interval_minutes', intervalMinutes);
+            addToast('Intervalo salvo com sucesso!', 'success');
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao salvar intervalo.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+    
+    const handleMediaUpload = async () => {
+        if (!mediaFiles || mediaFiles.length === 0) return addToast('Por favor, selecione os arquivos de mídia.', 'error');
+        const formData = new FormData();
+        for (const file of mediaFiles) {
+            formData.append('mediafiles', file);
+        }
+        
+        showLoading();
+        try {
+            const res = await api.post('/admin/pills/upload-media', formData);
+            addToast(res.data.message, 'success');
+            setMediaFiles(null);
+            if (mediaInputRef.current) mediaInputRef.current.value = null;
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao enviar mídias.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handleSyncMedia = async () => {
+        showLoading();
+        try {
+            const res = await api.post('/admin/pills/sync-media');
+            addToast(res.data.message, 'success');
+            fetchPills();
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao sincronizar mídias.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handlePillSubmit = async (pillData) => {
+        const apiCall = pillData.id
+            ? api.put(`/admin/pills/${pillData.id}`, pillData)
+            : api.post('/admin/pills', pillData);
+        
+        showLoading();
+        try {
+            const res = await apiCall;
+            addToast(res.data.message, 'success');
+            fetchPills();
+            setIsPillModalOpen(false);
+        } catch (err) {
+            addToast(err.response?.data?.error || 'Erro ao salvar pílula.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handleSelectAllPills = (e) => {
+        if (e.target.checked) {
+            setSelectedPillIds(pills.map(p => p.id));
+        } else {
+            setSelectedPillIds([]);
+        }
+    };
+
+    const handleSelectPill = (id) => {
+        setSelectedPillIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(selectedId => selectedId !== id) 
+                : [...prev, id]
+        );
+    };
+
+    const handleDeletePill = async (id) => {
+        if (window.confirm('Tem certeza?')) {
+            try {
+                await api.delete(`/admin/pills/${id}`);
+                addToast('Pílula deletada.', 'success');
+                fetchPills();
+            } catch(err) {
+                addToast('Erro ao deletar.', 'error');
+            }
+        }
+    };
+
+    const handleBulkDeletePills = async () => {
+        if (window.confirm(`Deletar ${selectedPillIds.length} pílulas?`)) {
+            showLoading();
+            try {
+                await api.post('/admin/pills/bulk-delete', { ids: selectedPillIds });
+                addToast('Pílulas selecionadas deletadas.', 'success');
+                setSelectedPillIds([]);
+                fetchPills();
+            } catch(err) {
+                addToast('Erro na exclusão em massa.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+    };
+
+    return (
+        <div className={styles.adminSection}>
+            <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>Pílulas do Conhecimento</h2>
+            </div>
+            <div className={styles.pillsConfigGrid}>
+                <div className={styles.configToggle}>
+                    <span>Envio Automático</span>
+                    <label className={styles.switch}>
+                        <input 
+                            type="checkbox" 
+                            checked={configs.pills_broadcast_enabled || false}
+                            onChange={() => toggleConfig('pills_broadcast_enabled')}
+                        />
+                        <span className={styles.slider}></span>
+                    </label>
+                </div>
+                <div className={styles.configInterval}>
+                    <label>Intervalo (minutos)</label>
+                    <input 
+                        type="number" 
+                        value={intervalMinutes}
+                        onChange={(e) => setIntervalMinutes(e.target.value)}
+                        className={styles.intervalInput}
+                    />
+                    <button onClick={handleSaveInterval} className={styles.secondaryButton}>Salvar</button>
+                </div>
+                <div className={styles.configManualSend}>
+                     <button onClick={handleSendNow} className={styles.primaryButton}>Enviar Pílula Agora</button>
+                </div>
+            </div>
+            
+            <div className={styles.importSection}>
+                <div>
+                    <label>1. Importar CSV de Pílulas</label>
+                    <input type="file" accept=".csv" ref={csvInputRef} onChange={(e) => setCsvFile(e.target.files[0])} />
+                    <button onClick={handleImportCsv} className={styles.secondaryButton} disabled={!csvFile}>Importar CSV</button>
+                </div>
+            </div>
+            
+            <div className={styles.importSection}>
+                <div>
+                    <label>2. Enviar Arquivos de Mídia (PDFs, etc)</label>
+                    <input type="file" multiple ref={mediaInputRef} onChange={(e) => setMediaFiles(e.target.files)} />
+                    <button onClick={handleMediaUpload} className={styles.secondaryButton} disabled={!mediaFiles}>Enviar Mídias</button>
+                </div>
+                <div className={styles.syncSection}>
+                    <label>3. Associar Mídias e Telegram</label>
+                    <button onClick={handleSyncMedia} className={styles.syncButton}>Sincronizar Mídias</button>
+                </div>
+            </div>
+
+            <div className={styles.pillsToolbar}>
+                <button onClick={() => { setEditingPill(null); setIsPillModalOpen(true); }} className={styles.primaryButton}>Criar Pílula</button>
+                {selectedPillIds.length > 0 && (
+                    <button onClick={handleBulkDeletePills} className={styles.deleteButton}>
+                        Excluir Selecionadas ({selectedPillIds.length})
+                    </button>
+                )}
+            </div>
+
+            <div className={styles.tableContainer}>
+                <table className={styles.pillsTable}>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" checked={pills.length > 0 && selectedPillIds.length === pills.length} onChange={handleSelectAllPills} /></th>
+                            <th>ID</th>
+                            <th>Conteúdo</th>
+                            <th>Arquivo</th>
+                            <th>File ID</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {pills.map(pill => (
+                            <tr key={pill.id}>
+                                <td><input type="checkbox" checked={selectedPillIds.includes(pill.id)} onChange={() => handleSelectPill(pill.id)} /></td>
+                                <td>{pill.id}</td>
+                                <td className={styles.contentCell}>{pill.conteudo}</td>
+                                <td>{pill.source_file}</td>
+                                <td className={styles.fileIdCell}>{pill.telegram_file_id ? '✅' : 'Pendente'}</td>
+                                <td className={styles.actionsCell}>
+                                    <button onClick={() => { setEditingPill(pill); setIsPillModalOpen(true); }} className={styles.editButton}>Editar</button>
+                                    <button onClick={() => handleDeletePill(pill.id)} className={styles.deleteButtonSmall}>Excluir</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <PillFormModal
+                isOpen={isPillModalOpen}
+                onClose={() => setIsPillModalOpen(false)}
+                onSubmit={handlePillSubmit}
+                pill={editingPill}
+            />
+        </div>
+    );
+}
+
 function AdminPage() {
-    const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState('');
+    const { addToast } = useFeedbackStore();
+    const { configs, loading: loadingConfigs } = useConfigStore();
+
     const [challenges, setChallenges] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentChallenge, setCurrentChallenge] = useState(null);
     const [formOptions, setFormOptions] = useState({ temas: [], subtemas: [], cargos: [], canais: [] });
-    const [telegramId, setTelegramId] = useState(null);
+    const [loading, setLoading] = useState(false);
     
-    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore();
+    const fetchChallenges = useCallback(async () => {
+        setLoading(true);
+        try {
+            const challengesRes = await api.get('/admin/challenges');
+            setChallenges(challengesRes.data);
+        } catch (err) {
+             addToast('Erro ao carregar desafios.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [addToast]);
 
     useEffect(() => {
-        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if (user && user.id) {
-            setTelegramId(user.id.toString());
-        }
-    }, []);
-
-    const fetchAllData = useCallback(async () => {
-        const isWeb = !window.Telegram?.WebApp?.initData;
-        if (!isWeb && !telegramId) {
-            return;
-        }
-
+        fetchChallenges();
+    }, [fetchChallenges]);
+    
+    const handleOpenChallengeModal = async (challenge = null) => {
+        setCurrentChallenge(challenge);
         setLoading(true);
-        setMessage('');
         try {
-            const params = telegramId ? { telegram_id: telegramId } : {};
-
-            const [challengesRes, temasRes, subtemasRes, cargosRes, canaisRes] = await Promise.all([
-                api.get('/admin/challenges', { params }),
-                api.get('/admin/challenge_options', { params: { ...params, type: 'tema' } }),
-                api.get('/admin/challenge_options', { params: { ...params, type: 'subtema' } }),
-                api.get('/admin/challenge_options', { params: { ...params, type: 'cargo' } }),
-                api.get('/admin/challenge_options', { params: { ...params, type: 'canal_principal' } })
+            const [temasRes, subtemasRes, cargosRes, canaisRes] = await Promise.all([
+                api.get('/admin/challenge_options', { params: { type: 'tema' } }),
+                api.get('/admin/challenge_options', { params: { type: 'subtema' } }),
+                api.get('/admin/challenge_options', { params: { type: 'cargo' } }),
+                api.get('/admin/challenge_options', { params: { type: 'canal_principal' } })
             ]);
-            setChallenges(challengesRes.data);
             setFormOptions({
                 temas: temasRes.data,
                 subtemas: subtemasRes.data,
                 cargos: cargosRes.data,
                 canais: canaisRes.data
             });
+            setIsModalOpen(true);
         } catch (err) {
-            setMessage('Erro ao carregar dados do admin.');
-            console.error(err);
+            addToast('Erro ao carregar opções para o desafio.', 'error');
         } finally {
             setLoading(false);
         }
-    }, [telegramId]);
-
-    useEffect(() => {
-        fetchAllData();
-    }, [fetchAllData]);
-
-    const handleOpenCreateModal = () => {
-        setCurrentChallenge(null);
-        setIsModalOpen(true);
-    };
-
-    const handleOpenEditModal = (challenge) => {
-        setCurrentChallenge(challenge);
-        setIsModalOpen(true);
     };
 
     const handleDeleteChallenge = async (id) => {
         if (window.confirm('Tem certeza que deseja excluir este desafio?')) {
-            setMessage('Excluindo...');
             try {
-                await api.delete(`/admin/challenges/${id}`, { data: { telegram_id: telegramId } });
-                setMessage('Desafio excluído com sucesso!');
-                fetchAllData();
+                await api.delete(`/admin/challenges/${id}`);
+                addToast('Desafio excluído com sucesso!', 'success');
+                fetchChallenges();
             } catch (err) {
-                setMessage('Erro ao excluir desafio.');
-                console.error(err);
+                addToast(err.response?.data?.error || 'Erro ao excluir desafio.', 'error');
             }
         }
     };
     
     const handleFormSubmit = async (challengeData) => {
-        setMessage('Salvando desafio...');
-        const payload = { ...challengeData, telegram_id: telegramId };
         const apiCall = challengeData.id 
-            ? api.put(`/admin/challenges/${challengeData.id}`, payload)
-            : api.post('/admin/challenges', payload);
+            ? api.put(`/admin/challenges/${challengeData.id}`, challengeData)
+            : api.post('/admin/challenges', challengeData);
 
         try {
             await apiCall;
-            setMessage('Desafio salvo com sucesso!');
+            addToast('Desafio salvo com sucesso!', 'success');
             setIsModalOpen(false);
-            fetchAllData();
+            fetchChallenges();
         } catch (err) {
-            setMessage('Erro ao salvar desafio.');
-            console.error(err);
+            addToast(err.response?.data?.error || 'Erro ao salvar desafio.', 'error');
         }
     };
 
@@ -345,8 +593,6 @@ function AdminPage() {
     return (
         <div className={styles.screenContainer}>
             <div className={styles.contentArea}>
-                {message && <p className={styles.message}>{message}</p>}
-
                 <div className={styles.adminSection}>
                      <div className={styles.sectionHeader}>
                         <h2 className={styles.sectionTitle}>Análises</h2>
@@ -357,6 +603,8 @@ function AdminPage() {
                 </div>
 
                 <AdminManagement />
+                
+                <KnowledgePillsManagement />
 
                 <div className={styles.adminSection}>
                     <div className={styles.sectionHeader}>
@@ -368,7 +616,7 @@ function AdminPage() {
                             <input 
                                 type="checkbox" 
                                 checked={configs.modo_treino_ativado || false}
-                                onChange={() => toggleConfig('modo_treino_ativado')}
+                                onChange={() => useConfigStore.getState().toggleConfig('modo_treino_ativado')}
                             />
                             <span className={styles.slider}></span>
                         </label>
@@ -387,7 +635,7 @@ function AdminPage() {
                 <div className={styles.adminSection}>
                     <div className={styles.sectionHeader}>
                         <h2 className={styles.sectionTitle}>Gerenciador de Desafios</h2>
-                        <button onClick={handleOpenCreateModal} className={styles.primaryButton}>
+                        <button onClick={() => handleOpenChallengeModal()} className={styles.primaryButton}>
                             Criar Novo Desafio
                         </button>
                     </div>
@@ -412,7 +660,7 @@ function AdminPage() {
                                         <td>{new Date(c.data_inicio).toLocaleString()}</td>
                                         <td>{new Date(c.data_fim).toLocaleString()}</td>
                                         <td className={styles.actionsCell}>
-                                            <button onClick={() => handleOpenEditModal(c)} className={styles.editButton}>Editar</button>
+                                            <button onClick={() => handleOpenChallengeModal(c)} className={styles.editButton}>Editar</button>
                                             <button onClick={() => handleDeleteChallenge(c.id)} className={styles.deleteButton}>Excluir</button>
                                         </td>
                                     </tr>

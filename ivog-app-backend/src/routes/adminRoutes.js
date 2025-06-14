@@ -20,32 +20,24 @@ import {
 } from '../controllers/adminController.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-router.post(
-    '/import-questions', // REMOVIDO /admin
-    cors(),
-    upload.single('csvfile'),
-    requireAdminAccess,
-    importQuestionsFromCsvController
-);
-
+// Aplica o middleware de segurança a todas as rotas deste arquivo
 router.use(requireAdminAccess);
 
-router.post('/toggle_config/:key', toggleAdminConfigController); // REMOVIDO /admin
-router.post('/set_config/:key', setAdminConfigController); // REMOVIDO /admin
-router.get('/challenge_options', getChallengeOptionsController); // REMOVIDO /admin
-router.post('/challenge/activate', activateChallengeController); // REMOVIDO /admin
-router.post('/challenge/deactivate', deactivateChallengeController); // REMOVIDO /admin
-router.get('/all_distinct_challenges', getAllDistinctChallengesController); // REMOVIDO /admin
-router.get('/challenge_stats', getChallengeStatsController); // REMOVIDO /admin
-router.post('/challenges', createChallengeController); // REMOVIDO /admin
-router.get('/challenges', listChallengesController); // REMOVIDO /admin
-router.put('/challenges/:id', updateChallengeController); // REMOVIDO /admin
-router.delete('/challenges/:id', deleteChallengeController); // REMOVIDO /admin
-router.get('/debug/all_challenges', getAllChallengesForDebug); // REMOVIDO /admin
-router.get('/form-options', getQuestionFormOptionsController); // REMOVIDO /admin
+router.post('/import-questions', cors(), upload.single('csvfile'), importQuestionsFromCsvController);
+router.post('/toggle_config/:key', toggleAdminConfigController);
+router.post('/set_config/:key', setAdminConfigController);
+router.get('/challenge_options', getChallengeOptionsController);
+router.post('/challenge/activate', activateChallengeController);
+router.post('/challenge/deactivate', deactivateChallengeController);
+router.get('/all_distinct_challenges', getAllDistinctChallengesController);
+router.get('/challenge_stats', getChallengeStatsController);
+router.post('/challenges', createChallengeController);
+router.get('/challenges', listChallengesController);
+router.put('/challenges/:id', updateChallengeController);
+router.delete('/challenges/:id', deleteChallengeController);
+router.get('/debug/all_challenges', getAllChallengesForDebug);
+router.get('/form-options', getQuestionFormOptionsController);
 
 export default router;
