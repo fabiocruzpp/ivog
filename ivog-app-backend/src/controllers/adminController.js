@@ -42,18 +42,36 @@ export const getAdminConfigsController = async (req, res) => {
 export const toggleAdminConfigController = async (req, res) => {
   try {
     const { key } = req.params;
-    const validKeys = ['simulado_livre_ativado', 'feedback_detalhado_ativo', 'desafio_ativo', 'modo_treino_ativado', 'pills_broadcast_enabled'];
+    // ✅ ADICIONAR as chaves de horário silencioso aqui
+    const validKeys = [
+      'simulado_livre_ativado', 
+      'feedback_detalhado_ativo', 
+      'desafio_ativo', 
+      'modo_treino_ativado', 
+      'pills_broadcast_enabled',
+      'pills_quiet_time_enabled'  // ← NOVA CHAVE ADICIONADA
+    ];
+    
     if (!validKeys.includes(key)) {
       return res.status(400).json({ error: "Chave de configuração inválida." });
     }
+    
     const currentConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = ?", [key]);
     const currentValue = currentConfig ? currentConfig.valor === 'true' : false;
     const newValue = !currentValue;
+    
     await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", [key, newValue.toString()]);
+    
     if (key === 'desafio_ativo' && newValue === false) {
       await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", ['desafio_tipo', '']);
       await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", ['desafio_valor', '']);
     }
+    
+    // ✅ REINICIAR scheduler quando configuração de pílulas muda
+    if (key === 'pills_quiet_time_enabled') {
+      startPillsScheduler();
+    }
+    
     res.status(200).json({ status: "success", new_value: newValue });
   } catch (error) {
     res.status(500).json({ error: "Erro interno do servidor." });
@@ -64,25 +82,46 @@ export const setAdminConfigController = async (req, res) => {
     try {
         const { key } = req.params;
         const { value } = req.body;
-        const validKeys = ['num_max_perguntas_simulado', 'pills_broadcast_interval_minutes'];
+        
+        // ✅ ADICIONAR as chaves de horário silencioso aqui
+        const validKeys = [
+          'num_max_perguntas_simulado', 
+          'pills_broadcast_interval_minutes',
+          'pills_quiet_time_start',    // ← NOVA CHAVE ADICIONADA
+          'pills_quiet_time_end'       // ← NOVA CHAVE ADICIONADA
+        ];
+        
         if (!validKeys.includes(key)) {
             return res.status(400).json({ error: "Chave de configuração inválida para esta operação." });
         }
-        if (value === undefined || value === '' || Number(value) < 1) {
-            return res.status(400).json({ error: "Um valor válido é obrigatório." });
+        
+        // ✅ VALIDAÇÃO específica para horários
+        if (key === 'pills_quiet_time_start' || key === 'pills_quiet_time_end') {
+            // Validar formato de hora (HH:mm)
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(value)) {
+                return res.status(400).json({ error: "Formato de horário inválido. Use HH:mm (ex: 21:00)" });
+            }
+        } else {
+            // Validação original para valores numéricos
+            if (value === undefined || value === '' || Number(value) < 1) {
+                return res.status(400).json({ error: "Um valor válido é obrigatório." });
+            }
         }
+        
         await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", [key, value.toString()]);
-
-        // Se a chave for o intervalo, reinicia o agendador com o novo valor
-        if (key === 'pills_broadcast_interval_minutes') {
-            startPillsScheduler(); 
+        
+        // ✅ REINICIAR scheduler quando configurações de pílulas mudam
+        if (key === 'pills_broadcast_interval_minutes' || key === 'pills_quiet_time_start' || key === 'pills_quiet_time_end') {
+            startPillsScheduler();
         }
-
+        
         res.status(200).json({ status: "success", message: `Configuração '${key}' atualizada para '${value}'.` });
     } catch (error) {
         res.status(500).json({ error: "Erro interno do servidor." });
     }
 };
+
 
 export const getChallengeOptionsController = async (req, res) => {
     try {

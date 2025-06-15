@@ -30,13 +30,17 @@ const initializeDb = () => {
           { chave: 'desafio_valor', valor: '' },
           { chave: 'modo_treino_ativado', valor: 'true' },
           { chave: 'pills_broadcast_enabled', valor: 'true' },
-          { chave: 'pills_broadcast_interval_minutes', valor: '60' }
+          { chave: 'pills_broadcast_interval_minutes', valor: '60' },
+          // Novas configurações de horário silencioso
+          { chave: 'pills_quiet_time_enabled', valor: 'false' },
+          { chave: 'pills_quiet_time_start', valor: '21:00' },
+          { chave: 'pills_quiet_time_end', valor: '06:00' }
         ];
         const sql = `INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES (?, ?)`;
         defaultConfigs.forEach(config => {
           db.run(sql, [config.chave, config.valor]);
         });
-        console.log('Configurações iniciais verificadas/inseridas.');
+        console.log('Configurações iniciais verificadas/inseridas (incluindo horário silencioso).');
     };
 
     const seedSuperAdmin = async () => {

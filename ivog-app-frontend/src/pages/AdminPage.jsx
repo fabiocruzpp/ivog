@@ -19,6 +19,106 @@ const getInitialFormData = () => ({
     filtros: { tema: '', subtema: '' },
 });
 
+// Componente de Header com Tabs
+function AdminHeader({ activeTab, onTabChange }) {
+    const tabs = [
+        { id: 'overview', label: 'Visão Geral', icon: '📊' },
+        { id: 'admins', label: 'Administradores', icon: '👥' },
+        { id: 'pills', label: 'Pílulas', icon: '💊' },
+        { id: 'challenges', label: 'Desafios', icon: '🎯' },
+        { id: 'questions', label: 'Perguntas', icon: '❓' },
+    ];
+
+    return (
+        <div className={styles.adminHeader}>
+            <div className={styles.headerTop}>
+                <h1 className={styles.pageTitle}>
+                    <span className={styles.titleIcon}>⚙️</span>
+                    Painel Administrativo
+                </h1>
+                <div className={styles.headerActions}>
+                    <Link to="/admin/dashboard" className={styles.dashboardButton}>
+                        <span>📈</span>
+                        Dashboard
+                    </Link>
+                </div>
+            </div>
+            <nav className={styles.tabNavigation}>
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
+                        onClick={() => onTabChange(tab.id)}
+                    >
+                        <span className={styles.tabIcon}>{tab.icon}</span>
+                        <span className={styles.tabLabel}>{tab.label}</span>
+                    </button>
+                ))}
+            </nav>
+        </div>
+    );
+}
+
+// Componente de Visão Geral
+function OverviewSection() {
+    const { configs } = useConfigStore();
+    
+    const cards = [
+        {
+            title: 'Sistema',
+            icon: '⚡',
+            status: 'Ativo',
+            color: 'green',
+            description: 'Todos os serviços operacionais'
+        },
+        {
+            title: 'Modo Treino',
+            icon: '🎓',
+            status: configs?.modo_treino_ativado ? 'Ativo' : 'Inativo',
+            color: configs?.modo_treino_ativado ? 'blue' : 'gray',
+            description: 'Sistema de treinamento'
+        },
+        {
+            title: 'Pílulas',
+            icon: '💊',
+            status: configs?.pills_broadcast_interval_minutes === 999999 ? 'Pausado' : 'Ativo',
+            color: configs?.pills_broadcast_interval_minutes === 999999 ? 'orange' : 'green',
+            description: 'Envio automático de conteúdo'
+        }
+    ];
+
+    return (
+        <div className={styles.overviewSection}>
+            <div className={styles.overviewCards}>
+                {cards.map((card, index) => (
+                    <div key={index} className={`${styles.statusCard} ${styles[card.color]}`}>
+                        <div className={styles.cardHeader}>
+                            <span className={styles.cardIcon}>{card.icon}</span>
+                            <div className={styles.cardTitle}>{card.title}</div>
+                        </div>
+                        <div className={styles.cardStatus}>{card.status}</div>
+                        <div className={styles.cardDescription}>{card.description}</div>
+                    </div>
+                ))}
+            </div>
+            
+            <div className={styles.quickActions}>
+                <h3>Ações Rápidas</h3>
+                <div className={styles.actionButtons}>
+                    <Link to="/admin/questions" className={styles.actionButton}>
+                        <span>❓</span>
+                        Gerenciar Perguntas
+                    </Link>
+                    <Link to="/admin/dashboard" className={styles.actionButton}>
+                        <span>📈</span>
+                        Ver Relatórios
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
     const [formData, setFormData] = useState(getInitialFormData());
 
@@ -82,73 +182,92 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
     return (
         <div className={styles.modalBackdrop}>
             <div className={styles.modalContent}>
-                <h2>{challenge ? 'Editar Desafio' : 'Criar Novo Desafio'}</h2>
+                <div className={styles.modalHeader}>
+                    <h2>{challenge ? 'Editar Desafio' : 'Criar Novo Desafio'}</h2>
+                    <button onClick={onClose} className={styles.closeButton}>×</button>
+                </div>
                 <form onSubmit={handleSubmit} className={styles.challengeForm}>
-                    <div className={styles.formGroup}>
-                        <label>Título</label>
-                        <input name="titulo" value={formData.titulo} onChange={handleChange} required />
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label>Descrição</label>
-                        <textarea name="descricao" value={formData.descricao} onChange={handleChange}></textarea>
-                    </div>
-                    <div className={styles.formGrid}>
+                    <div className={styles.formSection}>
+                        <h3>Informações Básicas</h3>
                         <div className={styles.formGroup}>
-                            <label>Data de Início</label>
-                            <input type="datetime-local" name="data_inicio" value={formData.data_inicio} onChange={handleChange} required />
+                            <label>Título</label>
+                            <input name="titulo" value={formData.titulo} onChange={handleChange} required />
                         </div>
                         <div className={styles.formGroup}>
-                            <label>Data de Fim</label>
-                            <input type="datetime-local" name="data_fim" value={formData.data_fim} onChange={handleChange} required />
+                            <label>Descrição</label>
+                            <textarea name="descricao" value={formData.descricao} onChange={handleChange}></textarea>
                         </div>
                     </div>
-                     <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label>Status</label>
-                            <select name="status" value={formData.status} onChange={handleChange}>
-                                <option value="ativo">Ativo</option>
-                                <option value="inativo">Inativo</option>
-                                <option value="arquivado">Arquivado</option>
-                            </select>
+
+                    <div className={styles.formSection}>
+                        <h3>Configurações</h3>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label>Data de Início</label>
+                                <input type="datetime-local" name="data_inicio" value={formData.data_inicio} onChange={handleChange} required />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Data de Fim</label>
+                                <input type="datetime-local" name="data_fim" value={formData.data_fim} onChange={handleChange} required />
+                            </div>
                         </div>
-                         <div className={styles.formGroup}>
-                            <label>Nº de Perguntas</label>
-                            <input type="number" name="num_perguntas" value={formData.num_perguntas} onChange={handleChange} min="1" required />
-                        </div>
-                    </div>
-                    <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label>Conteúdo (Tema)</label>
-                            <select name="tema" value={formData.filtros.tema} onChange={handleFilterChange} required >
-                                <option value="">Selecione um tema</option>
-                                {options.temas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label>Conteúdo (Subtema)</label>
-                            <select name="subtema" value={formData.filtros.subtema} onChange={handleFilterChange}>
-                                <option value="">(Opcional) Selecione um subtema</option>
-                                {options.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label>Status</label>
+                                <select name="status" value={formData.status} onChange={handleChange}>
+                                    <option value="ativo">Ativo</option>
+                                    <option value="inativo">Inativo</option>
+                                    <option value="arquivado">Arquivado</option>
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Nº de Perguntas</label>
+                                <input type="number" name="num_perguntas" value={formData.num_perguntas} onChange={handleChange} min="1" required />
+                            </div>
                         </div>
                     </div>
-                    <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label>Público: Canal</label>
-                            <select multiple value={formData.publico_alvo.canal_principal} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'canal_principal')} className={styles.multiSelect}>
-                                {options.canais.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label>Público: Cargo</label>
-                            <select multiple value={formData.publico_alvo.cargo} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'cargo')} className={styles.multiSelect}>
-                                {options.cargos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+
+                    <div className={styles.formSection}>
+                        <h3>Conteúdo</h3>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label>Tema</label>
+                                <select name="tema" value={formData.filtros.tema} onChange={handleFilterChange} required >
+                                    <option value="">Selecione um tema</option>
+                                    {options.temas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Subtema (Opcional)</label>
+                                <select name="subtema" value={formData.filtros.subtema} onChange={handleFilterChange}>
+                                    <option value="">Selecione um subtema</option>
+                                    {options.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <div className={styles.formSection}>
+                        <h3>Público-Alvo</h3>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label>Canal</label>
+                                <select multiple value={formData.publico_alvo.canal_principal} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'canal_principal')} className={styles.multiSelect}>
+                                    {options.canais.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Cargo</label>
+                                <select multiple value={formData.publico_alvo.cargo} onChange={(e) => handleMultiSelectChange(e, 'publico_alvo', 'cargo')} className={styles.multiSelect}>
+                                    {options.cargos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className={styles.formActions}>
                         <button type="button" onClick={onClose} className={styles.secondaryButton}>Cancelar</button>
-                        <button type="submit" className={styles.primaryButton}>Salvar</button>
+                        <button type="submit" className={styles.primaryButton}>Salvar Desafio</button>
                     </div>
                 </form>
             </div>
@@ -203,41 +322,71 @@ function AdminManagement() {
     };
 
     return (
-        <div className={styles.adminSection}>
-            <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Gerenciar Administradores</h2>
+        <div className={styles.tabContent}>
+            <div className={styles.sectionCard}>
+                <div className={styles.cardHeader}>
+                    <h2>👥 Gerenciar Administradores</h2>
+                    <div className={styles.adminCount}>
+                        <span>{admins.length} administrador{admins.length !== 1 ? 'es' : ''}</span>
+                    </div>
+                </div>
+                
+                <div className={styles.addAdminSection}>
+                    <form onSubmit={handleAddAdmin} className={styles.addAdminForm}>
+                        <div className={styles.inputGroup}>
+                            <input
+                                type="text"
+                                value={newAdminId}
+                                onChange={(e) => setNewAdminId(e.target.value)}
+                                placeholder="ID do Telegram do novo admin"
+                                className={styles.adminInput}
+                                disabled={!isSuperAdmin}
+                            />
+                            <button
+                                type="submit"
+                                className={styles.primaryButton}
+                                disabled={!isSuperAdmin}
+                            >
+                                <span>➕</span>
+                                Adicionar
+                            </button>
+                        </div>
+                        {!isSuperAdmin && (
+                            <p className={styles.permissionWarning}>
+                                ⚠️ Apenas o super admin pode gerenciar administradores
+                            </p>
+                        )}
+                    </form>
+                </div>
+
+                <div className={styles.adminsList}>
+                    {admins.map(admin => (
+                        <div key={admin.telegram_id} className={styles.adminItem}>
+                            <div className={styles.adminInfo}>
+                                <div className={styles.adminAvatar}>
+                                    {admin.first_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className={styles.adminDetails}>
+                                    <div className={styles.adminName}>{admin.first_name}</div>
+                                    <div className={styles.adminId}>ID: {admin.telegram_id}</div>
+                                </div>
+                            </div>
+                            <div className={styles.adminActions}>
+                                {admin.telegram_id.toString() === SUPER_ADMIN_ID && (
+                                    <span className={styles.superAdminBadge}>Super Admin</span>
+                                )}
+                                <button
+                                    onClick={() => handleRemoveAdmin(admin.telegram_id)}
+                                    className={styles.removeButton}
+                                    disabled={!isSuperAdmin || admin.telegram_id.toString() === SUPER_ADMIN_ID}
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <form onSubmit={handleAddAdmin} className={styles.addAdminForm}>
-                <input
-                    type="text"
-                    value={newAdminId}
-                    onChange={(e) => setNewAdminId(e.target.value)}
-                    placeholder="ID do Telegram do novo admin"
-                    className={styles.adminInput}
-                    disabled={!isSuperAdmin}
-                />
-                <button
-                    type="submit"
-                    className={styles.primaryButton}
-                    disabled={!isSuperAdmin}
-                >
-                    Adicionar
-                </button>
-            </form>
-            <ul className={styles.adminList}>
-                {admins.map(admin => (
-                    <li key={admin.telegram_id}>
-                        <span>{admin.first_name} ({admin.telegram_id})</span>
-                        <button
-                            onClick={() => handleRemoveAdmin(admin.telegram_id)}
-                            className={styles.deleteButtonSmall}
-                            disabled={!isSuperAdmin || admin.telegram_id.toString() === SUPER_ADMIN_ID}
-                        >
-                            Remover
-                        </button>
-                    </li>
-                ))}
-            </ul>
         </div>
     );
 }
@@ -254,12 +403,31 @@ function KnowledgePillsManagement() {
     const [editingPill, setEditingPill] = useState(null);
     const [selectedPillIds, setSelectedPillIds] = useState([]);
     const [intervalMinutes, setIntervalMinutes] = useState('');
+    const [quietTimeStart, setQuietTimeStart] = useState('21:00');
+    const [quietTimeEnd, setQuietTimeEnd] = useState('06:00');
+    const [quietTimeEnabled, setQuietTimeEnabled] = useState(false);
 
     useEffect(() => {
         if (configs && configs.pills_broadcast_interval_minutes !== undefined) {
-            // Se o valor for 999999, mostra como 0 para o usuário
             const displayValue = configs.pills_broadcast_interval_minutes === 999999 ? 0 : configs.pills_broadcast_interval_minutes;
             setIntervalMinutes(displayValue.toString());
+        }
+
+        if (configs) {
+            const enabledKeys = ['pills_quiet_time_enabled', 'pills_quiet_enabled', 'pills_silence_enabled', 'pills_no_disturb_enabled'];
+            for (const key of enabledKeys) {
+                if (configs[key] !== undefined) {
+                    setQuietTimeEnabled(configs[key] === true || configs[key] === 'true');
+                    break;
+                }
+            }
+
+            if (configs.pills_quiet_time_start) {
+                setQuietTimeStart(configs.pills_quiet_time_start);
+            }
+            if (configs.pills_quiet_time_end) {
+                setQuietTimeEnd(configs.pills_quiet_time_end);
+            }
         }
     }, [configs]);
 
@@ -317,7 +485,6 @@ function KnowledgePillsManagement() {
         showLoading();
         try {
             if (numericValue === 0) {
-                // Usa um valor muito alto para "desabilitar" (999999 minutos ≈ 694 dias)
                 await setConfigValue('pills_broadcast_interval_minutes', 999999);
                 addToast('Envio de pílulas desabilitado! (Intervalo definido como inativo)', 'success');
             } else {
@@ -327,6 +494,52 @@ function KnowledgePillsManagement() {
         } catch (err) {
             console.error('Erro:', err);
             addToast(err.response?.data?.error || 'Erro ao salvar intervalo.', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handleSaveQuietTime = async () => {
+        if (quietTimeEnabled && (!quietTimeStart || !quietTimeEnd)) {
+            addToast('Por favor, defina os horários de início e fim.', 'error');
+            return;
+        }
+
+        showLoading();
+        try {
+            try {
+                const toggleResponse = await api.post('/admin/toggle_config/pills_quiet_time_enabled');
+                const currentValue = toggleResponse.data.new_value;
+                
+                if (currentValue !== quietTimeEnabled) {
+                    await api.post('/admin/toggle_config/pills_quiet_time_enabled');
+                }
+                console.log('✅ Enabled salvo com sucesso');
+            } catch (err) {
+                console.error('❌ Erro ao salvar enabled:', err.response?.data?.error);
+                throw err;
+            }
+
+            if (quietTimeEnabled) {
+                try {
+                    await setConfigValue('pills_quiet_time_start', quietTimeStart);
+                    await setConfigValue('pills_quiet_time_end', quietTimeEnd);
+                    console.log('✅ Horários salvos com sucesso');
+                } catch (err) {
+                    console.error('❌ Erro ao salvar horários:', err.response?.data?.error);
+                    throw err;
+                }
+            }
+            
+            const message = quietTimeEnabled 
+                ? `Horário silencioso ativado: ${quietTimeStart} às ${quietTimeEnd}`
+                : 'Horário silencioso desativado';
+            
+            addToast(message, 'success');
+            
+        } catch (err) {
+            console.error('Erro ao salvar horário silencioso:', err);
+            addToast(err.response?.data?.error || 'Erro ao salvar horário silencioso.', 'error');
         } finally {
             hideLoading();
         }
@@ -427,15 +640,32 @@ function KnowledgePillsManagement() {
         }
     };
 
-    // Função para calcular o status atual
     const getPillsStatus = () => {
         const interval = configs?.pills_broadcast_interval_minutes;
         if (!interval || interval === 999999) {
             return { status: 'disabled', text: 'Desativado', className: 'statusDisabled' };
         }
+
+        let statusText = `Ativo: ${interval} minuto${interval > 1 ? 's' : ''}`;
+        
+        const enabledKeys = ['pills_quiet_time_enabled', 'pills_quiet_enabled', 'pills_silence_enabled', 'pills_no_disturb_enabled'];
+        let quietEnabled = false;
+        for (const key of enabledKeys) {
+            if (configs?.[key] === true || configs?.[key] === 'true') {
+                quietEnabled = true;
+                break;
+            }
+        }
+
+        if (quietEnabled) {
+            const start = configs.pills_quiet_time_start || '21:00';
+            const end = configs.pills_quiet_time_end || '06:00';
+            statusText += ` (Silêncio: ${start}-${end})`;
+        }
+
         return { 
             status: 'active', 
-            text: `Ativado: ${interval} minuto${interval > 1 ? 's' : ''}`, 
+            text: statusText, 
             className: 'statusActive' 
         };
     };
@@ -443,105 +673,255 @@ function KnowledgePillsManagement() {
     const pillsStatus = getPillsStatus();
 
     return (
-        <div className={styles.adminSection}>
-            <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Pílulas do Conhecimento</h2>
-                <div className={`${styles.statusIndicator} ${styles[pillsStatus.className]}`}>
-                    <span className={styles.statusDot}></span>
-                    <span className={styles.statusText}>{pillsStatus.text}</span>
+        <div className={styles.tabContent}>
+            <div className={styles.sectionCard}>
+                <div className={styles.cardHeader}>
+                    <h2>💊 Pílulas do Conhecimento</h2>
+                    <div className={`${styles.statusBadge} ${styles[pillsStatus.className]}`}>
+                        <span className={styles.statusDot}></span>
+                        {pillsStatus.text}
+                    </div>
                 </div>
-            </div>
 
-            <div className={styles.pillsConfigGrid}>
-                <div className={styles.configInterval}>
-                    <label>Intervalo de Envio (minutos)</label>
-                    <input
-                        type="number"
-                        value={intervalMinutes}
-                        onChange={(e) => setIntervalMinutes(e.target.value)}
-                        className={styles.intervalInput}
-                        min="0"
-                        placeholder="0 para desativar"
-                    />
-                    <button onClick={handleSaveInterval} className={styles.secondaryButton}>Salvar</button>
-                </div>
-                <div className={styles.configManualSend}>
-                     <button onClick={handleSendNow} className={styles.primaryButton}>Enviar Pílula Agora</button>
-                </div>
-            </div>
+                {/* Seção de Configurações */}
+                <div className={styles.configSection}>
+                    <h3>⚙️ Configurações de Envio</h3>
+                    <div className={styles.configGrid}>
+                        <div className={styles.configCard}>
+                            <h4>Intervalo de Envio</h4>
+                            <div className={styles.configInputGroup}>
+                                <input
+                                    type="number"
+                                    value={intervalMinutes}
+                                    onChange={(e) => setIntervalMinutes(e.target.value)}
+                                    className={styles.configInput}
+                                    min="0"
+                                    placeholder="0 para desativar"
+                                />
+                                <span className={styles.inputUnit}>minutos</span>
+                                <button onClick={handleSaveInterval} className={styles.saveButton}>
+                                    💾 Salvar
+                                </button>
+                            </div>
+                        </div>
 
-            <div className={styles.importSection}>
-                <div>
-                    <label>1. Importar CSV de Pílulas</label>
-                    <input type="file" accept=".csv" ref={csvInputRef} onChange={(e) => setCsvFile(e.target.files[0])} />
-                    <button onClick={handleImportCsv} className={styles.secondaryButton} disabled={!csvFile}>Importar CSV</button>
+                        <div className={styles.configCard}>
+                            <h4>Ação Manual</h4>
+                            <button onClick={handleSendNow} className={styles.sendNowButton}>
+                                🚀 Enviar Pílula Agora
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div className={styles.importSection}>
-                <div>
-                    <label>2. Enviar Arquivos de Mídia (PDFs, etc)</label>
-                    <input type="file" multiple ref={mediaInputRef} onChange={(e) => setMediaFiles(e.target.files)} />
-                    <button onClick={handleMediaUpload} className={styles.secondaryButton} disabled={!mediaFiles}>Enviar Mídias</button>
+                {/* Horário Silencioso */}
+                <div className={styles.quietTimeSection}>
+                    <h3>🌙 Horário Silencioso</h3>
+                    <div className={styles.quietTimeCard}>
+                        <div className={styles.quietTimeToggle}>
+                            <label className={styles.toggleLabel}>
+                                <input
+                                    type="checkbox"
+                                    checked={quietTimeEnabled}
+                                    onChange={(e) => setQuietTimeEnabled(e.target.checked)}
+                                    className={styles.toggleInput}
+                                />
+                                <span className={styles.toggleSlider}></span>
+                                Ativar horário silencioso
+                            </label>
+                        </div>
+                        
+                        {quietTimeEnabled && (
+                            <div className={styles.timeConfig}>
+                                <div className={styles.timeInputGroup}>
+                                    <label>Das:</label>
+                                    <input
+                                        type="time"
+                                        value={quietTimeStart}
+                                        onChange={(e) => setQuietTimeStart(e.target.value)}
+                                        className={styles.timeInput}
+                                    />
+                                </div>
+                                <span className={styles.timeSeparator}>até</span>
+                                <div className={styles.timeInputGroup}>
+                                    <label>Às:</label>
+                                    <input
+                                        type="time"
+                                        value={quietTimeEnd}
+                                        onChange={(e) => setQuietTimeEnd(e.target.value)}
+                                        className={styles.timeInput}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        
+                        <button onClick={handleSaveQuietTime} className={styles.saveButton}>
+                            💾 Salvar Horário
+                        </button>
+                        
+                        {quietTimeEnabled && (
+                            <div className={styles.quietTimeInfo}>
+                                <span className={styles.infoIcon}>ℹ️</span>
+                                As pílulas não serão enviadas entre {quietTimeStart} e {quietTimeEnd}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className={styles.syncSection}>
-                    <label>3. Associar Mídias e Telegram</label>
-                    <button onClick={handleSyncMedia} className={styles.syncButton}>Sincronizar Mídias</button>
-                </div>
-            </div>
 
-            <div className={styles.pillsToolbar}>
-                <button onClick={() => { setEditingPill(null); setIsPillModalOpen(true); }} className={styles.primaryButton}>Criar Pílula</button>
-                {selectedPillIds.length > 0 && (
-                    <button onClick={handleBulkDeletePills} className={styles.deleteButton}>
-                        Excluir Selecionadas ({selectedPillIds.length})
+                {/* Seção de Importação */}
+                <div className={styles.importSection}>
+                    <h3>📁 Gerenciar Conteúdo</h3>
+                    <div className={styles.importSteps}>
+                        <div className={styles.importStep}>
+                            <div className={styles.stepNumber}>1</div>
+                            <div className={styles.stepContent}>
+                                <h4>Importar CSV</h4>
+                                <div className={styles.fileUpload}>
+                                    <input 
+                                        type="file" 
+                                        accept=".csv" 
+                                        ref={csvInputRef} 
+                                        onChange={(e) => setCsvFile(e.target.files[0])}
+                                        className={styles.fileInput}
+                                    />
+                                    <button 
+                                        onClick={handleImportCsv} 
+                                        className={styles.uploadButton} 
+                                        disabled={!csvFile}
+                                    >
+                                        📄 Importar CSV
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.importStep}>
+                            <div className={styles.stepNumber}>2</div>
+                            <div className={styles.stepContent}>
+                                <h4>Upload de Mídia</h4>
+                                <div className={styles.fileUpload}>
+                                    <input 
+                                        type="file" 
+                                        multiple 
+                                        ref={mediaInputRef} 
+                                        onChange={(e) => setMediaFiles(e.target.files)}
+                                        className={styles.fileInput}
+                                    />
+                                    <button 
+                                        onClick={handleMediaUpload} 
+                                        className={styles.uploadButton} 
+                                        disabled={!mediaFiles}
+                                    >
+                                        🎬 Enviar Mídias
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.importStep}>
+                            <div className={styles.stepNumber}>3</div>
+                            <div className={styles.stepContent}>
+                                <h4>Sincronizar</h4>
+                                <button onClick={handleSyncMedia} className={styles.syncButton}>
+                                    🔄 Sincronizar Mídias
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Toolbar e Lista de Pílulas */}
+                <div className={styles.pillsToolbar}>
+                    <button 
+                        onClick={() => { setEditingPill(null); setIsPillModalOpen(true); }} 
+                        className={styles.primaryButton}
+                    >
+                        ➕ Criar Pílula
                     </button>
-                )}
-            </div>
+                    {selectedPillIds.length > 0 && (
+                        <button onClick={handleBulkDeletePills} className={styles.deleteButton}>
+                            🗑️ Excluir Selecionadas ({selectedPillIds.length})
+                        </button>
+                    )}
+                    <div className={styles.pillsCount}>
+                        Total: {pills.length} pílula{pills.length !== 1 ? 's' : ''}
+                    </div>
+                </div>
 
-            <div className={styles.tableContainer}>
-                <table className={styles.pillsTable}>
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" checked={pills.length > 0 && selectedPillIds.length === pills.length} onChange={handleSelectAllPills} /></th>
-                            <th>ID</th>
-                            <th>Conteúdo</th>
-                            <th>Arquivo</th>
-                            <th>File ID</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div className={styles.pillsTable}>
+                    <div className={styles.tableHeader}>
+                        <div className={styles.checkboxColumn}>
+                            <input 
+                                type="checkbox" 
+                                checked={pills.length > 0 && selectedPillIds.length === pills.length} 
+                                onChange={handleSelectAllPills}
+                                className={styles.headerCheckbox}
+                            />
+                        </div>
+                        <div className={styles.idColumn}>ID</div>
+                        <div className={styles.contentColumn}>Conteúdo</div>
+                        <div className={styles.fileColumn}>Arquivo</div>
+                        <div className={styles.statusColumn}>Status</div>
+                        <div className={styles.actionsColumn}>Ações</div>
+                    </div>
+                    
+                    <div className={styles.tableBody}>
                         {pills.map(pill => (
-                            <tr key={pill.id}>
-                                <td><input type="checkbox" checked={selectedPillIds.includes(pill.id)} onChange={() => handleSelectPill(pill.id)} /></td>
-                                <td>{pill.id}</td>
-                                <td className={styles.contentCell}>{pill.conteudo}</td>
-                                <td>{pill.source_file}</td>
-                                <td className={styles.fileIdCell}>{pill.telegram_file_id ? '✅' : 'Pendente'}</td>
-                                <td className={styles.actionsCell}>
-                                    <button onClick={() => { setEditingPill(pill); setIsPillModalOpen(true); }} className={styles.editButton}>Editar</button>
-                                    <button onClick={() => handleDeletePill(pill.id)} className={styles.deleteButtonSmall}>Excluir</button>
-                                </td>
-                            </tr>
+                            <div key={pill.id} className={styles.tableRow}>
+                                <div className={styles.checkboxColumn}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedPillIds.includes(pill.id)} 
+                                        onChange={() => handleSelectPill(pill.id)}
+                                        className={styles.rowCheckbox}
+                                    />
+                                </div>
+                                <div className={styles.idColumn}>#{pill.id}</div>
+                                <div className={styles.contentColumn}>
+                                    <div className={styles.pillContent}>{pill.conteudo}</div>
+                                </div>
+                                <div className={styles.fileColumn}>
+                                    {pill.source_file && (
+                                        <span className={styles.fileName}>{pill.source_file}</span>
+                                    )}
+                                </div>
+                                <div className={styles.statusColumn}>
+                                    <span className={`${styles.statusBadge} ${pill.telegram_file_id ? styles.synced : styles.pending}`}>
+                                        {pill.telegram_file_id ? '✅ Sincronizado' : '⏳ Pendente'}
+                                    </span>
+                                </div>
+                                <div className={styles.actionsColumn}>
+                                    <button 
+                                        onClick={() => { setEditingPill(pill); setIsPillModalOpen(true); }} 
+                                        className={styles.editButton}
+                                    >
+                                        ✏️
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeletePill(pill.id)} 
+                                        className={styles.deleteButtonSmall}
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </div>
 
-            <PillFormModal
-                isOpen={isPillModalOpen}
-                onClose={() => {setIsPillModalOpen(false); setEditingPill(null);}}
-                onSubmit={handlePillSubmit}
-                pill={editingPill}
-            />
+                <PillFormModal
+                    isOpen={isPillModalOpen}
+                    onClose={() => {setIsPillModalOpen(false); setEditingPill(null);}}
+                    onSubmit={handlePillSubmit}
+                    pill={editingPill}
+                />
+            </div>
         </div>
     );
 }
 
-function AdminPage() {
+function ChallengesManagement() {
     const { addToast } = useFeedbackStore();
-    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore();
     const [challenges, setChallenges] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentChallenge, setCurrentChallenge] = useState(null);
@@ -615,102 +995,180 @@ function AdminPage() {
         }
     };
 
-    if (loading || loadingConfigs) return <p>Carregando painel de admin...</p>;
-
     return (
-        <div className={styles.screenContainer}>
-            <div className={styles.contentArea}>
-                <div className={styles.adminSection}>
-                     <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>Análises</h2>
-                        <Link to="/admin/dashboard" className={styles.primaryButton}>
-                            Ver Dashboard
-                        </Link>
-                    </div>
+        <div className={styles.tabContent}>
+            <div className={styles.sectionCard}>
+                <div className={styles.cardHeader}>
+                    <h2>🎯 Gerenciador de Desafios</h2>
+                    <button 
+                        onClick={() => handleOpenChallengeModal()} 
+                        className={styles.primaryButton}
+                    >
+                        ➕ Criar Novo Desafio
+                    </button>
                 </div>
 
-                <AdminManagement />
+                <div className={styles.challengesGrid}>
+                    {challenges.length > 0 ? challenges.map(challenge => (
+                        <div key={challenge.id} className={styles.challengeCard}>
+                            <div className={styles.challengeHeader}>
+                                <h3 className={styles.challengeTitle}>{challenge.titulo}</h3>
+                                <span className={`${styles.statusBadge} ${styles[challenge.status]}`}>
+                                    {challenge.status}
+                                </span>
+                            </div>
+                            
+                            <div className={styles.challengeInfo}>
+                                <div className={styles.infoItem}>
+                                    <span className={styles.infoLabel}>Perguntas:</span>
+                                    <span className={styles.infoValue}>{challenge.num_perguntas}</span>
+                                </div>
+                                <div className={styles.infoItem}>
+                                    <span className={styles.infoLabel}>Início:</span>
+                                    <span className={styles.infoValue}>
+                                        {new Date(challenge.data_inicio).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <div className={styles.infoItem}>
+                                    <span className={styles.infoLabel}>Fim:</span>
+                                    <span className={styles.infoValue}>
+                                        {new Date(challenge.data_fim).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
 
-                <KnowledgePillsManagement />
+                            {challenge.descricao && (
+                                <div className={styles.challengeDescription}>
+                                    {challenge.descricao}
+                                </div>
+                            )}
 
-                <div className={styles.adminSection}>
-                    <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>Configurações Gerais</h2>
-                    </div>
-                    <div className={styles.configToggle}>
-                        <span>Modo Treino</span>
-                        <label className={styles.switch}>
+                            <div className={styles.challengeActions}>
+                                <button 
+                                    onClick={() => handleOpenChallengeModal(challenge)} 
+                                    className={styles.editButton}
+                                >
+                                    ✏️ Editar
+                                </button>
+                                <button 
+                                    onClick={() => handleDeleteChallenge(challenge.id)} 
+                                    className={styles.deleteButton}
+                                >
+                                    🗑️ Excluir
+                                </button>
+                            </div>
+                        </div>
+                    )) : (
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>🎯</div>
+                            <h3>Nenhum desafio criado</h3>
+                            <p>Comece criando seu primeiro desafio!</p>
+                            <button 
+                                onClick={() => handleOpenChallengeModal()} 
+                                className={styles.primaryButton}
+                            >
+                                ➕ Criar Primeiro Desafio
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {isModalOpen && (
+                    <ChallengeFormModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        challenge={currentChallenge}
+                        onSubmit={handleFormSubmit}
+                        options={formOptions}
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
+function ConfigurationSection() {
+    const { configs, toggleConfig } = useConfigStore();
+
+    return (
+        <div className={styles.tabContent}>
+            <div className={styles.sectionCard}>
+                <div className={styles.cardHeader}>
+                    <h2>⚙️ Configurações Gerais</h2>
+                </div>
+                
+                <div className={styles.configOptions}>
+                    <div className={styles.configOption}>
+                        <div className={styles.configInfo}>
+                            <h3>🎓 Modo Treino</h3>
+                            <p>Ativa o sistema de treinamento para usuários</p>
+                        </div>
+                        <label className={styles.toggleSwitch}>
                             <input
                                 type="checkbox"
-                                checked={configs.modo_treino_ativado || false}
+                                checked={configs?.modo_treino_ativado || false}
                                 onChange={() => toggleConfig('modo_treino_ativado')}
                             />
-                            <span className={styles.slider}></span>
+                            <span className={styles.toggleSlider}></span>
                         </label>
                     </div>
                 </div>
-
-                <div className={styles.adminSection}>
-                    <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>Base de Conhecimento</h2>
-                        <Link to="/admin/questions" className={styles.primaryButton}>
-                            Gerenciar Perguntas
-                        </Link>
-                    </div>
-                </div>
-
-                <div className={styles.adminSection}>
-                    <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>Gerenciador de Desafios</h2>
-                        <button onClick={() => handleOpenChallengeModal()} className={styles.primaryButton}>
-                            Criar Novo Desafio
-                        </button>
-                    </div>
-                    <div className={styles.tableContainer}>
-                        <table className={styles.challengeTable}>
-                            <thead>
-                                <tr>
-                                    <th>Título</th>
-                                    <th>Status</th>
-                                    <th>Nº Perguntas</th>
-                                    <th>Início</th>
-                                    <th>Fim</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {challenges.length > 0 ? challenges.map(c => (
-                                    <tr key={c.id}>
-                                        <td>{c.titulo}</td>
-                                        <td><span className={`${styles.statusBadge} ${styles[c.status]}`}>{c.status}</span></td>
-                                        <td>{c.num_perguntas}</td>
-                                        <td>{new Date(c.data_inicio).toLocaleString()}</td>
-                                        <td>{new Date(c.data_fim).toLocaleString()}</td>
-                                        <td className={styles.actionsCell}>
-                                            <button onClick={() => handleOpenChallengeModal(c)} className={styles.editButton}>Editar</button>
-                                            <button onClick={() => handleDeleteChallenge(c.id)} className={styles.deleteButton}>Excluir</button>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="6">Nenhum desafio criado.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
+        </div>
+    );
+}
 
-            {isModalOpen && (
-                <ChallengeFormModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    challenge={currentChallenge}
-                    onSubmit={handleFormSubmit}
-                    options={formOptions}
-                />
-            )}
+function AdminPage() {
+    const [activeTab, setActiveTab] = useState('overview');
+    const { loading: loadingConfigs } = useConfigStore();
+
+    if (loadingConfigs) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <p>Carregando painel de admin...</p>
+            </div>
+        );
+    }
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'overview':
+                return <OverviewSection />;
+            case 'admins':
+                return <AdminManagement />;
+            case 'pills':
+                return <KnowledgePillsManagement />;
+            case 'challenges':
+                return <ChallengesManagement />;
+            case 'questions':
+                return (
+                    <div className={styles.tabContent}>
+                        <div className={styles.sectionCard}>
+                            <div className={styles.cardHeader}>
+                                <h2>❓ Base de Conhecimento</h2>
+                                <Link to="/admin/questions" className={styles.primaryButton}>
+                                    🔗 Gerenciar Perguntas
+                                </Link>
+                            </div>
+                            <div className={styles.redirectInfo}>
+                                <p>Clique no botão acima para acessar o gerenciador completo de perguntas.</p>
+                            </div>
+                        </div>
+                        <ConfigurationSection />
+                    </div>
+                );
+            default:
+                return <OverviewSection />;
+        }
+    };
+
+    return (
+        <div className={styles.adminContainer}>
+            <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
+            <div className={styles.adminContent}>
+                {renderTabContent()}
+            </div>
         </div>
     );
 }
