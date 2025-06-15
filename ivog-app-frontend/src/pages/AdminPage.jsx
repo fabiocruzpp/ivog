@@ -50,7 +50,7 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-    
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, filtros: { ...prev.filtros, [name]: value } }));
@@ -66,14 +66,13 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
             }
         }));
     };
-    
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const { filtros, ...rest } = formData;
         const filtrosArray = [];
         if (filtros.tema) filtrosArray.push({ tipo: 'tema', valor: filtros.tema });
         if (filtros.subtema) filtrosArray.push({ tipo: 'subtema', valor: filtros.subtema });
-
         const finalData = { ...rest, filtros: filtrosArray };
         if (finalData.data_inicio) finalData.data_inicio = new Date(finalData.data_inicio).toISOString();
         if (finalData.data_fim) finalData.data_fim = new Date(finalData.data_fim).toISOString();
@@ -179,6 +178,7 @@ function AdminManagement() {
     const handleAddAdmin = async (e) => {
         e.preventDefault();
         if (!newAdminId.trim()) return;
+
         try {
             const res = await api.post('/admin/management/admins', { telegram_id_to_add: newAdminId });
             addToast('Admin adicionado com sucesso!', 'success');
@@ -208,16 +208,16 @@ function AdminManagement() {
                 <h2 className={styles.sectionTitle}>Gerenciar Administradores</h2>
             </div>
             <form onSubmit={handleAddAdmin} className={styles.addAdminForm}>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     value={newAdminId}
                     onChange={(e) => setNewAdminId(e.target.value)}
                     placeholder="ID do Telegram do novo admin"
                     className={styles.adminInput}
                     disabled={!isSuperAdmin}
                 />
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     className={styles.primaryButton}
                     disabled={!isSuperAdmin}
                 >
@@ -228,8 +228,8 @@ function AdminManagement() {
                 {admins.map(admin => (
                     <li key={admin.telegram_id}>
                         <span>{admin.first_name} ({admin.telegram_id})</span>
-                        <button 
-                            onClick={() => handleRemoveAdmin(admin.telegram_id)} 
+                        <button
+                            onClick={() => handleRemoveAdmin(admin.telegram_id)}
                             className={styles.deleteButtonSmall}
                             disabled={!isSuperAdmin || admin.telegram_id.toString() === SUPER_ADMIN_ID}
                         >
@@ -247,8 +247,7 @@ function KnowledgePillsManagement() {
     const [csvFile, setCsvFile] = useState(null);
     const [mediaFiles, setMediaFiles] = useState(null);
     const { addToast, showLoading, hideLoading } = useFeedbackStore();
-    // CADA COMPONENTE AGORA ACESSA DIRETAMENTE A STORE
-    const { configs, toggleConfig, setConfigValue } = useConfigStore(); 
+    const { configs, setConfigValue } = useConfigStore();
     const csvInputRef = React.useRef(null);
     const mediaInputRef = React.useRef(null);
     const [isPillModalOpen, setIsPillModalOpen] = useState(false);
@@ -256,13 +255,14 @@ function KnowledgePillsManagement() {
     const [selectedPillIds, setSelectedPillIds] = useState([]);
     const [intervalMinutes, setIntervalMinutes] = useState('');
 
-    // Efeito para sincronizar o input com o valor da store
     useEffect(() => {
         if (configs && configs.pills_broadcast_interval_minutes !== undefined) {
-            setIntervalMinutes(configs.pills_broadcast_interval_minutes.toString());
+            // Se o valor for 999999, mostra como 0 para o usuário
+            const displayValue = configs.pills_broadcast_interval_minutes === 999999 ? 0 : configs.pills_broadcast_interval_minutes;
+            setIntervalMinutes(displayValue.toString());
         }
     }, [configs]);
-    
+
     const fetchPills = useCallback(() => {
         api.get('/admin/pills')
             .then(res => setPills(res.data))
@@ -275,9 +275,9 @@ function KnowledgePillsManagement() {
 
     const handleImportCsv = async () => {
         if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
+
         const formData = new FormData();
         formData.append('csvfile', csvFile);
-        
         showLoading();
         try {
             const res = await api.post('/admin/pills/import-csv', formData);
@@ -307,24 +307,38 @@ function KnowledgePillsManagement() {
     };
 
     const handleSaveInterval = async () => {
+        const numericValue = parseInt(intervalMinutes, 10);
+        
+        if (isNaN(numericValue) || numericValue < 0) {
+            addToast('Por favor, insira um valor válido (0 ou maior).', 'error');
+            return;
+        }
+
         showLoading();
         try {
-            await setConfigValue('pills_broadcast_interval_minutes', intervalMinutes);
-            addToast('Intervalo salvo! O agendador será atualizado no backend.', 'success');
+            if (numericValue === 0) {
+                // Usa um valor muito alto para "desabilitar" (999999 minutos ≈ 694 dias)
+                await setConfigValue('pills_broadcast_interval_minutes', 999999);
+                addToast('Envio de pílulas desabilitado! (Intervalo definido como inativo)', 'success');
+            } else {
+                await setConfigValue('pills_broadcast_interval_minutes', numericValue);
+                addToast(`Intervalo de ${numericValue} minuto(s) salvo! O agendador será atualizado.`, 'success');
+            }
         } catch (err) {
+            console.error('Erro:', err);
             addToast(err.response?.data?.error || 'Erro ao salvar intervalo.', 'error');
         } finally {
             hideLoading();
         }
     };
-    
+
     const handleMediaUpload = async () => {
         if (!mediaFiles || mediaFiles.length === 0) return addToast('Por favor, selecione os arquivos de mídia.', 'error');
+
         const formData = new FormData();
         for (const file of mediaFiles) {
             formData.append('mediafiles', file);
         }
-        
         showLoading();
         try {
             const res = await api.post('/admin/pills/upload-media', formData);
@@ -355,7 +369,7 @@ function KnowledgePillsManagement() {
         const apiCall = pillData.id
             ? api.put(`/admin/pills/${pillData.id}`, pillData)
             : api.post('/admin/pills', pillData);
-        
+
         showLoading();
         try {
             const res = await apiCall;
@@ -378,9 +392,9 @@ function KnowledgePillsManagement() {
     };
 
     const handleSelectPill = (id) => {
-        setSelectedPillIds(prev => 
-            prev.includes(id) 
-                ? prev.filter(selectedId => selectedId !== id) 
+        setSelectedPillIds(prev =>
+            prev.includes(id)
+                ? prev.filter(selectedId => selectedId !== id)
                 : [...prev, id]
         );
     };
@@ -413,31 +427,41 @@ function KnowledgePillsManagement() {
         }
     };
 
+    // Função para calcular o status atual
+    const getPillsStatus = () => {
+        const interval = configs?.pills_broadcast_interval_minutes;
+        if (!interval || interval === 999999) {
+            return { status: 'disabled', text: 'Desativado', className: 'statusDisabled' };
+        }
+        return { 
+            status: 'active', 
+            text: `Ativado: ${interval} minuto${interval > 1 ? 's' : ''}`, 
+            className: 'statusActive' 
+        };
+    };
+
+    const pillsStatus = getPillsStatus();
+
     return (
         <div className={styles.adminSection}>
             <div className={styles.sectionHeader}>
                 <h2 className={styles.sectionTitle}>Pílulas do Conhecimento</h2>
-            </div>
-            <div className={styles.pillsConfigGrid}>
-                <div className={styles.configToggle}>
-                    <span>Envio Automático</span>
-                    <label className={styles.switch}>
-                        <input 
-                            type="checkbox" 
-                            checked={configs.pills_broadcast_enabled || false}
-                            onChange={() => toggleConfig('pills_broadcast_enabled')}
-                        />
-                        <span className={styles.slider}></span>
-                    </label>
+                <div className={`${styles.statusIndicator} ${styles[pillsStatus.className]}`}>
+                    <span className={styles.statusDot}></span>
+                    <span className={styles.statusText}>{pillsStatus.text}</span>
                 </div>
+            </div>
+
+            <div className={styles.pillsConfigGrid}>
                 <div className={styles.configInterval}>
-                    <label>Intervalo (minutos)</label>
-                    <input 
-                        type="number" 
+                    <label>Intervalo de Envio (minutos)</label>
+                    <input
+                        type="number"
                         value={intervalMinutes}
                         onChange={(e) => setIntervalMinutes(e.target.value)}
                         className={styles.intervalInput}
-                        min="1"
+                        min="0"
+                        placeholder="0 para desativar"
                     />
                     <button onClick={handleSaveInterval} className={styles.secondaryButton}>Salvar</button>
                 </div>
@@ -445,7 +469,7 @@ function KnowledgePillsManagement() {
                      <button onClick={handleSendNow} className={styles.primaryButton}>Enviar Pílula Agora</button>
                 </div>
             </div>
-            
+
             <div className={styles.importSection}>
                 <div>
                     <label>1. Importar CSV de Pílulas</label>
@@ -453,7 +477,7 @@ function KnowledgePillsManagement() {
                     <button onClick={handleImportCsv} className={styles.secondaryButton} disabled={!csvFile}>Importar CSV</button>
                 </div>
             </div>
-            
+
             <div className={styles.importSection}>
                 <div>
                     <label>2. Enviar Arquivos de Mídia (PDFs, etc)</label>
@@ -504,6 +528,7 @@ function KnowledgePillsManagement() {
                     </tbody>
                 </table>
             </div>
+
             <PillFormModal
                 isOpen={isPillModalOpen}
                 onClose={() => {setIsPillModalOpen(false); setEditingPill(null);}}
@@ -514,17 +539,15 @@ function KnowledgePillsManagement() {
     );
 }
 
-
 function AdminPage() {
     const { addToast } = useFeedbackStore();
-    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore(); // Apenas o toggle é usado aqui
-
+    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore();
     const [challenges, setChallenges] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentChallenge, setCurrentChallenge] = useState(null);
     const [formOptions, setFormOptions] = useState({ temas: [], subtemas: [], cargos: [], canais: [] });
     const [loading, setLoading] = useState(false);
-    
+
     const fetchChallenges = useCallback(async () => {
         setLoading(true);
         try {
@@ -540,7 +563,7 @@ function AdminPage() {
     useEffect(() => {
         fetchChallenges();
     }, [fetchChallenges]);
-    
+
     const handleOpenChallengeModal = async (challenge = null) => {
         setCurrentChallenge(challenge);
         setLoading(true);
@@ -576,9 +599,9 @@ function AdminPage() {
             }
         }
     };
-    
+
     const handleFormSubmit = async (challengeData) => {
-        const apiCall = challengeData.id 
+        const apiCall = challengeData.id
             ? api.put(`/admin/challenges/${challengeData.id}`, challengeData)
             : api.post('/admin/challenges', challengeData);
 
@@ -607,7 +630,7 @@ function AdminPage() {
                 </div>
 
                 <AdminManagement />
-                
+
                 <KnowledgePillsManagement />
 
                 <div className={styles.adminSection}>
@@ -617,8 +640,8 @@ function AdminPage() {
                     <div className={styles.configToggle}>
                         <span>Modo Treino</span>
                         <label className={styles.switch}>
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 checked={configs.modo_treino_ativado || false}
                                 onChange={() => toggleConfig('modo_treino_ativado')}
                             />

@@ -39,7 +39,7 @@ const sendNextPill = async () => {
 
         if (targetUsers.length > 0) {
             const userIds = targetUsers.map(u => u.telegram_id);
-            const messageContent = `<b>Você sabia?</b>\n\n${pill.conteudo}\n\n<pre>Fonte: ${pill.source_file || '?'} / Pág. ${pill.source_page || '?'}</pre>`;
+            const messageContent = `<b>Você sabia?</b>\n\n${pill.conteudo}\n\n<b>Tema:</b>\n${pill.tema}\n<b>Fonte:</b>\nPág. ${pill.source_page}`;
             
             if (pill.telegram_file_id) {
                 await sendFileToUsers(pill.telegram_file_id, userIds, messageContent);
