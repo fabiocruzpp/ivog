@@ -247,7 +247,8 @@ function KnowledgePillsManagement() {
     const [csvFile, setCsvFile] = useState(null);
     const [mediaFiles, setMediaFiles] = useState(null);
     const { addToast, showLoading, hideLoading } = useFeedbackStore();
-    const { configs, toggleConfig, setConfigValue } = useConfigStore();
+    // CADA COMPONENTE AGORA ACESSA DIRETAMENTE A STORE
+    const { configs, toggleConfig, setConfigValue } = useConfigStore(); 
     const csvInputRef = React.useRef(null);
     const mediaInputRef = React.useRef(null);
     const [isPillModalOpen, setIsPillModalOpen] = useState(false);
@@ -255,11 +256,12 @@ function KnowledgePillsManagement() {
     const [selectedPillIds, setSelectedPillIds] = useState([]);
     const [intervalMinutes, setIntervalMinutes] = useState('');
 
+    // Efeito para sincronizar o input com o valor da store
     useEffect(() => {
-        if(configs.pills_broadcast_interval_minutes) {
-            setIntervalMinutes(configs.pills_broadcast_interval_minutes);
+        if (configs && configs.pills_broadcast_interval_minutes !== undefined) {
+            setIntervalMinutes(configs.pills_broadcast_interval_minutes.toString());
         }
-    }, [configs.pills_broadcast_interval_minutes]);
+    }, [configs]);
     
     const fetchPills = useCallback(() => {
         api.get('/admin/pills')
@@ -291,7 +293,7 @@ function KnowledgePillsManagement() {
     };
 
     const handleSendNow = async () => {
-        if(window.confirm('Deseja enviar uma pílula para os usuários agora?')) {
+        if(window.confirm('Deseja enviar uma pílula para os usuários agora? Esta ação é independente do agendador.')) {
             showLoading();
             try {
                 const res = await api.post('/admin/pills/send-now');
@@ -308,7 +310,7 @@ function KnowledgePillsManagement() {
         showLoading();
         try {
             await setConfigValue('pills_broadcast_interval_minutes', intervalMinutes);
-            addToast('Intervalo salvo com sucesso!', 'success');
+            addToast('Intervalo salvo! O agendador será atualizado no backend.', 'success');
         } catch (err) {
             addToast(err.response?.data?.error || 'Erro ao salvar intervalo.', 'error');
         } finally {
@@ -435,6 +437,7 @@ function KnowledgePillsManagement() {
                         value={intervalMinutes}
                         onChange={(e) => setIntervalMinutes(e.target.value)}
                         className={styles.intervalInput}
+                        min="1"
                     />
                     <button onClick={handleSaveInterval} className={styles.secondaryButton}>Salvar</button>
                 </div>
@@ -503,7 +506,7 @@ function KnowledgePillsManagement() {
             </div>
             <PillFormModal
                 isOpen={isPillModalOpen}
-                onClose={() => setIsPillModalOpen(false)}
+                onClose={() => {setIsPillModalOpen(false); setEditingPill(null);}}
                 onSubmit={handlePillSubmit}
                 pill={editingPill}
             />
@@ -511,9 +514,10 @@ function KnowledgePillsManagement() {
     );
 }
 
+
 function AdminPage() {
     const { addToast } = useFeedbackStore();
-    const { configs, loading: loadingConfigs } = useConfigStore();
+    const { configs, loading: loadingConfigs, toggleConfig } = useConfigStore(); // Apenas o toggle é usado aqui
 
     const [challenges, setChallenges] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -616,7 +620,7 @@ function AdminPage() {
                             <input 
                                 type="checkbox" 
                                 checked={configs.modo_treino_ativado || false}
-                                onChange={() => useConfigStore.getState().toggleConfig('modo_treino_ativado')}
+                                onChange={() => toggleConfig('modo_treino_ativado')}
                             />
                             <span className={styles.slider}></span>
                         </label>

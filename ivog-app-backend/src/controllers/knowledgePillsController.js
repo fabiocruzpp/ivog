@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { sendFileAndGetId } from '../services/telegramService.js';
-import { triggerPillSend } from '../services/schedulerService.js';
+import { manualSendAndResetScheduler } from '../services/schedulerService.js';
 import path from 'path';
 
 const dbAll = promisify(db.all.bind(db));
@@ -176,14 +176,13 @@ export const syncMediaController = async (req, res) => {
     }
 };
 
-// NOVO CONTROLLER
 export const sendPillNowController = async (req, res) => {
     try {
-        const result = await triggerPillSend();
+        const result = await manualSendAndResetScheduler();
         if (result.success) {
             res.status(200).json({ message: result.message });
         } else {
-            res.status(409).json({ error: result.message }); // 409 Conflict, por exemplo, se já estiver rodando ou desabilitado
+            res.status(409).json({ error: result.message });
         }
     } catch (error) {
         res.status(500).json({ error: 'Erro ao tentar o disparo avulso.' });

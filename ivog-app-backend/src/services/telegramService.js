@@ -92,8 +92,7 @@ export const sendFileAndGetId = async (filePath, targetChatId) => {
     }
 };
 
-// ALTERAÇÃO AQUI: Adicione 'caption' como um parâmetro
-export const sendFileToUsers = async (file_id, targetUserIds, caption) => { // Adicione 'caption' aqui
+export const sendFileToUsers = async (file_id, targetUserIds, caption) => {
     if (!bot || !file_id || !targetUserIds || targetUserIds.length === 0) {
         return;
     }
@@ -101,8 +100,7 @@ export const sendFileToUsers = async (file_id, targetUserIds, caption) => { // A
     
     for (const userId of targetUserIds) {
         try {
-            // Passe a 'caption' e o 'parse_mode' para bot.sendDocument
-            await bot.sendDocument(userId, file_id, { caption: caption, parse_mode: 'HTML' }); // Use 'caption' aqui
+            await bot.sendDocument(userId, file_id, { caption: caption, parse_mode: 'HTML' });
         } catch (error) {
              console.error(`Falha ao enviar arquivo com legenda para ${userId}:`, error.message);
         }
@@ -111,5 +109,4 @@ export const sendFileToUsers = async (file_id, targetUserIds, caption) => { // A
     console.log('Envio de arquivo com legenda concluído.');
 };
 
-// Exporta a instância do bot para ser usada em outros serviços
 export { bot };

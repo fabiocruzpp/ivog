@@ -25,3 +25,4 @@ dist-ssr
 /home/fabiocruzpp/ivog/ivog-app-backend/.env
 node_modules/
 **/.env
+ivog-app-backend/uploads

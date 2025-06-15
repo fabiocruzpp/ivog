@@ -6,6 +6,7 @@ import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { clearQuestionsCache } from '../services/quizService.js';
 import { getAllCanais, getAllCargos } from '../services/optionsService.js';
+import { startPillsScheduler } from '../services/schedulerService.js'; // IMPORTA O AGENDADOR
 
 const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
@@ -71,6 +72,12 @@ export const setAdminConfigController = async (req, res) => {
             return res.status(400).json({ error: "Um valor válido é obrigatório." });
         }
         await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", [key, value.toString()]);
+
+        // Se a chave for o intervalo, reinicia o agendador com o novo valor
+        if (key === 'pills_broadcast_interval_minutes') {
+            startPillsScheduler(); 
+        }
+
         res.status(200).json({ status: "success", message: `Configuração '${key}' atualizada para '${value}'.` });
     } catch (error) {
         res.status(500).json({ error: "Erro interno do servidor." });

@@ -32,7 +32,6 @@ export const useConfigStore = create((set) => ({
     }
   },
 
-  // NOVA AÇÃO
   setConfigValue: async (key, value) => {
     try {
         const response = await api.post(`/admin/set_config/${key}`, { value });
@@ -46,7 +45,7 @@ export const useConfigStore = create((set) => ({
         }
     } catch (error) {
         console.error(`Falha ao definir o valor da configuração ${key}:`, error);
-        throw error; // Lança o erro para o componente poder tratá-lo (ex: mostrar toast)
+        throw error;
     }
   }
 }));
