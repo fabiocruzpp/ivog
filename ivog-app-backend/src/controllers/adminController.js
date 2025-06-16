@@ -42,14 +42,13 @@ export const getAdminConfigsController = async (req, res) => {
 export const toggleAdminConfigController = async (req, res) => {
   try {
     const { key } = req.params;
-    // ✅ ADICIONAR as chaves de horário silencioso aqui
     const validKeys = [
       'simulado_livre_ativado', 
       'feedback_detalhado_ativo', 
       'desafio_ativo', 
       'modo_treino_ativado', 
       'pills_broadcast_enabled',
-      'pills_quiet_time_enabled'  // ← NOVA CHAVE ADICIONADA
+      'pills_quiet_time_enabled'
     ];
     
     if (!validKeys.includes(key)) {
@@ -67,7 +66,6 @@ export const toggleAdminConfigController = async (req, res) => {
       await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", ['desafio_valor', '']);
     }
     
-    // ✅ REINICIAR scheduler quando configuração de pílulas muda
     if (key === 'pills_quiet_time_enabled') {
       startPillsScheduler();
     }
@@ -83,27 +81,23 @@ export const setAdminConfigController = async (req, res) => {
         const { key } = req.params;
         const { value } = req.body;
         
-        // ✅ ADICIONAR as chaves de horário silencioso aqui
         const validKeys = [
           'num_max_perguntas_simulado', 
           'pills_broadcast_interval_minutes',
-          'pills_quiet_time_start',    // ← NOVA CHAVE ADICIONADA
-          'pills_quiet_time_end'       // ← NOVA CHAVE ADICIONADA
+          'pills_quiet_time_start',
+          'pills_quiet_time_end'
         ];
         
         if (!validKeys.includes(key)) {
             return res.status(400).json({ error: "Chave de configuração inválida para esta operação." });
         }
         
-        // ✅ VALIDAÇÃO específica para horários
         if (key === 'pills_quiet_time_start' || key === 'pills_quiet_time_end') {
-            // Validar formato de hora (HH:mm)
             const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
             if (!timeRegex.test(value)) {
                 return res.status(400).json({ error: "Formato de horário inválido. Use HH:mm (ex: 21:00)" });
             }
         } else {
-            // Validação original para valores numéricos
             if (value === undefined || value === '' || Number(value) < 1) {
                 return res.status(400).json({ error: "Um valor válido é obrigatório." });
             }
@@ -111,7 +105,6 @@ export const setAdminConfigController = async (req, res) => {
         
         await dbRun("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", [key, value.toString()]);
         
-        // ✅ REINICIAR scheduler quando configurações de pílulas mudam
         if (key === 'pills_broadcast_interval_minutes' || key === 'pills_quiet_time_start' || key === 'pills_quiet_time_end') {
             startPillsScheduler();
         }
@@ -305,7 +298,7 @@ export const updateChallengeController = async (req, res) => {
 
     if (filtros.length > 0) {
         for (const filtro of filtros) {
-             if (filtro.valor) {
+            if (filtro.valor) {
                 await dbRun(
                     `INSERT INTO desafio_filtros (desafio_id, tipo_filtro, valor_filtro) VALUES (?, ?, ?)`,
                     [id, filtro.tipo, filtro.valor]
@@ -441,4 +434,65 @@ export const importQuestionsFromCsvController = (req, res) => {
         .on('error', (err) => {
             res.status(500).json({ error: "Falha ao processar o arquivo CSV." });
         });
+};
+
+/**
+ * Busca todos os usuários cadastrados.
+ */
+export const getAllUsers = async (req, res) => {
+  try {
+    // CORREÇÃO FINAL: Usando a coluna "data_cadastro" que existe na tabela
+    const sql = `
+      SELECT telegram_id, first_name, ddd, canal_principal, cargo 
+      FROM usuarios 
+      ORDER BY data_cadastro DESC
+    `;
+    const users = await dbAll(sql);
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    res.status(500).json({ message: 'Erro interno do servidor ao buscar usuários.' });
+  }
+};
+
+/**
+ * Exclui um usuário e todos os seus dados relacionados.
+ */
+export const deleteUser = async (req, res) => {
+  const { telegram_id } = req.params;
+
+  try {
+    await new Promise((resolve, reject) => db.run('BEGIN TRANSACTION', (err) => err ? reject(err) : resolve()));
+
+    await dbRun('DELETE FROM respostas_simulado WHERE telegram_id = ?', [telegram_id]);
+    await dbRun('DELETE FROM resultados WHERE telegram_id = ?', [telegram_id]);
+    await dbRun('DELETE FROM simulados WHERE telegram_id = ?', [telegram_id]);
+    await dbRun('DELETE FROM admin_credentials WHERE telegram_id = ?', [telegram_id]);
+    
+    // CORREÇÃO: Envolvendo o comando em uma nova Promise para capturar o resultado
+    const result = await new Promise((resolve, reject) => {
+      db.run('DELETE FROM usuarios WHERE telegram_id = ?', [telegram_id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          // 'this' contém o resultado da operação e é retornado pela Promise
+          resolve(this); 
+        }
+      });
+    });
+
+    if (result.changes === 0) {
+      await new Promise((resolve) => db.run('ROLLBACK', () => resolve()));
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    await new Promise((resolve, reject) => db.run('COMMIT', (err) => err ? reject(err) : resolve()));
+    
+    res.status(200).json({ message: 'Usuário e todos os seus dados foram excluídos com sucesso.' });
+
+  } catch (error) {
+    await new Promise((resolve) => db.run('ROLLBACK', () => resolve()));
+    console.error(`Erro ao excluir usuário ${telegram_id}:`, error);
+    res.status(500).json({ message: 'Erro interno do servidor ao excluir o usuário.' });
+  }
 };

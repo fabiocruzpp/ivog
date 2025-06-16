@@ -1,0 +1,65 @@
+.tableContainer {
+  width: 100%;
+}
+
+.userTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: #f0f0f0;
+}
+
+.userTable th,
+.userTable td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #4a4a5a;
+  text-align: left;
+  word-break: break-word;
+}
+
+.userTable th {
+  background-color: #3a3a4a;
+  font-weight: bold;
+}
+
+.userTable tbody tr:hover {
+  background-color: #3a3a4a;
+}
+
+.excludeButton {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.excludeButton:hover {
+  background-color: #c0392b;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #fff;
+}
+
+.loadingSpinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #fff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

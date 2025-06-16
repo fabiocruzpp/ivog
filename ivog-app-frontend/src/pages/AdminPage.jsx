@@ -6,6 +6,7 @@ import { useConfigStore } from '../store/configStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useUserStore } from '../store/userStore';
 import PillFormModal from '../components/PillFormModal';
+import UserManagementTable from '../components/UserManagementTable'; // NOVO: 1. Importar o componente da tabela
 
 const getInitialFormData = () => ({
     id: null,
@@ -24,6 +25,7 @@ function AdminHeader({ activeTab, onTabChange }) {
     const tabs = [
         { id: 'overview', label: 'Visão Geral', icon: '📊' },
         { id: 'admins', label: 'Administradores', icon: '👥' },
+        { id: 'users', label: 'Usuários', icon: '👤' }, // NOVO: 2. Adicionar a aba de Usuários
         { id: 'pills', label: 'Pílulas', icon: '💊' },
         { id: 'challenges', label: 'Desafios', icon: '🎯' },
         { id: 'questions', label: 'Perguntas', icon: '❓' },
@@ -58,6 +60,25 @@ function AdminHeader({ activeTab, onTabChange }) {
         </div>
     );
 }
+
+// NOVO: 3. Criar a seção para o conteúdo da nova aba
+function UserManagementSection() {
+    return (
+        <div className={styles.tabContent}>
+            <div className={styles.sectionCard}>
+                <div className={styles.cardHeader}>
+                    <h2>👤 Gerenciar Usuários</h2>
+                </div>
+                <UserManagementTable />
+            </div>
+        </div>
+    );
+}
+
+
+// O resto do seu arquivo continua aqui (OverviewSection, ChallengeFormModal, AdminManagement, etc.)
+// ... (COLE O RESTO DO SEU CÓDIGO ORIGINAL DA AdminPage.jsx AQUI)
+// ...
 
 // Componente de Visão Geral
 function OverviewSection() {
@@ -978,7 +999,7 @@ function ChallengesManagement() {
             const challengesRes = await api.get('/admin/challenges');
             setChallenges(challengesRes.data);
         } catch (err) {
-             addToast('Erro ao carregar desafios.', 'error');
+            addToast('Erro ao carregar desafios.', 'error');
         } finally {
             setLoading(false);
         }
@@ -1181,6 +1202,8 @@ function AdminPage() {
                 return <OverviewSection />;
             case 'admins':
                 return <AdminManagement />;
+            case 'users': // NOVO: 4. Adicionar a renderização do conteúdo da nova aba
+                return <UserManagementSection />;
             case 'pills':
                 return <KnowledgePillsManagement />;
             case 'challenges':
