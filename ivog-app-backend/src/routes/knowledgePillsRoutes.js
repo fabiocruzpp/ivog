@@ -1,51 +1,27 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { requireAdminAccess } from '../middleware/requireAdminAccess.js';
-import { 
-    listPillsController,
-    importPillsCsvController,
-    syncMediaController,
-    createPillController,
-    updatePillController,
-    deletePillController,
-    bulkDeletePillsController,
-    sendPillNowController
-} from '../controllers/knowledgePillsController.js';
+import knowledgePillsController from '../controllers/knowledgePillsController.js';
 
 const router = express.Router();
 
-const mediaDir = 'uploads/pills_media/';
-fs.mkdirSync(mediaDir, { recursive: true });
+// Configuração do multer para upload de arquivos CSV
+const upload = multer({ storage: multer.memoryStorage() });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, mediaDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    }
-});
+// ROTAS ESPECÍFICAS PRIMEIRO (sem parâmetros dinâmicos)
+router.get('/', knowledgePillsController.listPillsController);
+router.post('/', knowledgePillsController.createPillController);
 
-const mediaUpload = multer({ 
-    storage: storage,
-    limits: { fileSize: 100 * 1024 * 1024 }
-});
-const csvUpload = multer({ storage: multer.memoryStorage() });
+// Rotas de import e funcionalidades específicas
+router.post('/import-csv', knowledgePillsController.importPillsCsvController);
+router.post('/import-csv-content', knowledgePillsController.importPillsCsvContentController);
+router.post('/debug-upload', upload.single('csvFile'), knowledgePillsController.debugCsvUploadController);
+router.post('/manual-send', knowledgePillsController.manualSendPillsController);
+router.post('/sync-media', knowledgePillsController.syncMediaController);
 
-router.use(requireAdminAccess);
-
-router.get('/', listPillsController);
-router.post('/', createPillController);
-router.put('/:id', updatePillController);
-router.delete('/:id', deletePillController);
-router.post('/bulk-delete', bulkDeletePillsController);
-router.post('/import-csv', csvUpload.single('csvfile'), importPillsCsvController);
-router.post('/upload-media', mediaUpload.array('mediafiles'), (req, res) => {
-    res.status(200).json({ message: `${req.files.length} arquivo(s) enviados com sucesso!` });
-});
-router.post('/sync-media', syncMediaController);
-router.post('/send-now', sendPillNowController);
+// ROTAS COM PARÂMETROS DINÂMICOS POR ÚLTIMO
+router.get('/:id', knowledgePillsController.getPillByIdController);
+router.put('/:id', knowledgePillsController.updatePillController);
+router.delete('/:id', knowledgePillsController.deletePillController);
+router.post('/:id/send-telegram', knowledgePillsController.sendPillToTelegramController);
 
 export default router;

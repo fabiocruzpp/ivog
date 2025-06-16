@@ -442,23 +442,56 @@ function KnowledgePillsManagement() {
     }, [fetchPills]);
 
     const handleImportCsv = async () => {
-        if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
+    if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
 
-        const formData = new FormData();
-        formData.append('csvfile', csvFile);
-        showLoading();
-        try {
-            const res = await api.post('/admin/pills/import-csv', formData);
-            addToast(res.data.message, 'success');
-            fetchPills();
-            setCsvFile(null);
-            if (csvInputRef.current) csvInputRef.current.value = null;
-        } catch (err) {
-            addToast(err.response?.data?.error || 'Erro ao importar CSV.', 'error');
-        } finally {
-            hideLoading();
-        }
-    };
+    // Validação do arquivo
+    if (!csvFile.name.toLowerCase().endsWith('.csv')) {
+        addToast('Por favor, selecione um arquivo CSV válido.', 'error');
+        return;
+    }
+
+    if (csvFile.size > 10 * 1024 * 1024) { // 10MB limit
+        addToast('Arquivo muito grande. Máximo 10MB permitido.', 'error');
+        return;
+    }
+
+    showLoading();
+    try {
+        // Ler o conteúdo do arquivo CSV
+        const csvContent = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            reader.readAsText(csvFile, 'UTF-8');
+        });
+
+        console.log('📄 Conteúdo CSV lido:', csvContent.substring(0, 200) + '...');
+
+        // Enviar como JSON
+        const response = await api.post('/admin/pills/import-csv', {
+            csvContent: csvContent,
+            fileName: csvFile.name
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('✅ Resposta do servidor:', response.data);
+        addToast(response.data.message, 'success');
+        fetchPills();
+        setCsvFile(null);
+        if (csvInputRef.current) csvInputRef.current.value = null;
+
+    } catch (err) {
+        console.error('❌ Erro ao importar CSV:', err);
+        const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Erro ao importar CSV.';
+        addToast(errorMessage, 'error');
+    } finally {
+        hideLoading();
+    }
+};
+
 
     const handleSendNow = async () => {
         if(window.confirm('Deseja enviar uma pílula para os usuários agora? Esta ação é independente do agendador.')) {
@@ -773,27 +806,38 @@ function KnowledgePillsManagement() {
                     <h3>📁 Gerenciar Conteúdo</h3>
                     <div className={styles.importSteps}>
                         <div className={styles.importStep}>
-                            <div className={styles.stepNumber}>1</div>
-                            <div className={styles.stepContent}>
-                                <h4>Importar CSV</h4>
-                                <div className={styles.fileUpload}>
-                                    <input 
-                                        type="file" 
-                                        accept=".csv" 
-                                        ref={csvInputRef} 
-                                        onChange={(e) => setCsvFile(e.target.files[0])}
-                                        className={styles.fileInput}
-                                    />
-                                    <button 
-                                        onClick={handleImportCsv} 
-                                        className={styles.uploadButton} 
-                                        disabled={!csvFile}
-                                    >
-                                        📄 Importar CSV
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+    <div className={styles.stepNumber}>1</div>
+    <div className={styles.stepContent}>
+        <h4>Importar CSV</h4>
+        <div className={styles.fileUpload}>
+            <input 
+                type="file" 
+                accept=".csv" 
+                ref={csvInputRef} 
+                onChange={(e) => setCsvFile(e.target.files[0])}
+                className={styles.fileInput}
+            />
+            {csvFile && (
+                <div className={styles.fileInfo}>
+                    <span className={styles.fileName}>📄 {csvFile.name}</span>
+                    <span className={styles.fileSize}>({(csvFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+            )}
+            <button 
+                onClick={handleImportCsv} 
+                className={styles.uploadButton} 
+                disabled={!csvFile}
+            >
+                📤 Importar CSV
+            </button>
+        </div>
+        <div className={styles.csvHelp}>
+            <small>
+                ℹ️ Formato: CARGO;TEMA;CONTEUDO;ARQUIVO_DE_ORIGEM;PAGINA
+            </small>
+        </div>
+    </div>
+</div>
 
                         <div className={styles.importStep}>
                             <div className={styles.stepNumber}>2</div>

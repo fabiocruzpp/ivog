@@ -16,6 +16,7 @@ import challengeRoutes from './routes/challengeRoutes.js';
 import optionsRoutes from './routes/optionsRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import configRoutes from './routes/configRoutes.js';
+import knowledgePillsRoutes from './routes/knowledgePillsRoutes.js'; // Adicione esta linha
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -33,6 +34,7 @@ app.use('/api', statsRoutes);
 app.use('/api', utilityRoutes);
 app.use('/api', challengeRoutes);
 app.use('/api', configRoutes);
+app.use('/api/knowledge-pills', knowledgePillsRoutes); // Adicione esta linha
 
 // Rota protegida por API Key
 app.use('/api', biRoutes);
