@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import api from '../services/api';
 import { useFeedbackStore } from './feedbackStore';
-import { useUserStore } from './userStore';
 
 const initialState = {
   quizData: null,
@@ -15,31 +14,19 @@ const initialState = {
 export const useQuizStore = create((set, get) => ({
   ...initialState,
 
-  startQuiz: async (searchParams, navigate) => {
+  startQuiz: async (params, navigate) => {
     useFeedbackStore.getState().showLoading();
     set({ ...initialState, loading: true }); 
     
     try {
-      const { userProfile } = useUserStore.getState();
-      if (!userProfile || !userProfile.telegram_id) {
-        throw new Error('Perfil do usuário não carregado. Tente novamente.');
-      }
-      
-      const params = { 
-        telegram_id: userProfile.telegram_id,
-        cargo: userProfile.cargo,
-        canal_principal: userProfile.canal_principal,
-        desafio_id: searchParams.get('desafio_id'),
-        is_training: searchParams.get('is_training'),
-        temas: searchParams.get('temas'),
-      };
-
       const response = await api.get('/quiz/start', { params });
       
       if (!response.data || response.data.questions.length === 0) {
         throw new Error('Nenhuma pergunta disponível para este quiz.');
       }
 
+      // --- CORREÇÃO APLICADA ---
+      // Lógica de transformação removida. Salva os dados brutos da API.
       set({ quizData: response.data, loading: false });
 
     } catch (err) {
@@ -65,8 +52,8 @@ export const useQuizStore = create((set, get) => ({
       await api.post('/quiz/answer', {
         simulado_id: get().quizData.simulado_id,
         telegram_id: window.Telegram.WebApp.initDataUnsafe.user.id,
-        pergunta: currentQuestion.pergunta_formatada_display,
-        resposta_usuario: selectedOption,
+        pergunta: currentQuestion.pergunta_formatada_display, // Usa o campo original
+        resposta_usuario: selectedOption, // Envia 'A', 'B', etc.
         resposta_correta: currentQuestion.correta,
         acertou: correct,
         tema: currentQuestion.tema,

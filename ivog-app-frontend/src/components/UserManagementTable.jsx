@@ -1,93 +1,132 @@
-// ivog-app-frontend/src/components/UserManagementTable.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
-import { useFeedbackStore } from '../store/feedbackStore';
 import styles from './UserManagementTable.module.css';
 
-const UserManagementTable = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { addToast } = useFeedbackStore();
+// Ícones
+const SearchIcon = () => <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg>;
+const ChevronDownIcon = () => <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>;
+const ChevronUpIcon = () => <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"></path></svg>;
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/admin/users');
-        setUsers(response.data);
-      } catch (error) {
-        addToast('Erro ao carregar a lista de usuários.', 'error');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+function UserManagementTable() {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'telegram_id', direction: 'ascending' });
+
+    useEffect(() => {
+        api.get('/admin/users')
+            .then(response => {
+                setUsers(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error("Erro ao buscar usuários:", error);
+                setLoading(false);
+            });
+    }, []);
+
+    const sortedAndFilteredUsers = useMemo(() => {
+        let filtered = users.filter(user =>
+            (user.first_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (user.telegram_id?.toString() || '').includes(searchTerm) ||
+            (user.cargo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (user.canal_principal?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        );
+
+        if (sortConfig.key) {
+            filtered.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return filtered;
+    }, [users, searchTerm, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
     };
 
-    fetchUsers();
-  }, [addToast]);
+    const SortableHeader = ({ children, name }) => {
+        const isSorted = sortConfig.key === name;
+        return (
+            <th onClick={() => requestSort(name)}>
+                <div className={styles.headerContent}>
+                    {children}
+                    <span className={styles.sortIcon}>
+                        {isSorted ? (sortConfig.direction === 'ascending' ? <ChevronUpIcon /> : <ChevronDownIcon />) : null}
+                    </span>
+                </div>
+            </th>
+        );
+    };
 
-  const handleExcludeUser = async (telegramId, userName) => {
-    if (!window.confirm(`Tem certeza que deseja excluir ${userName} (${telegramId})?\nEsta ação é irreversível e excluirá todos os dados do usuário.`)) {
-      return;
+    if (loading) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                Carregando usuários...
+            </div>
+        );
     }
 
-    try {
-      await api.delete(`/admin/users/${telegramId}`);
-      setUsers(currentUsers => currentUsers.filter(user => user.telegram_id !== telegramId));
-      addToast('Usuário excluído com sucesso!', 'success');
-    } catch (error) {
-      addToast('Erro ao excluir o usuário.', 'error');
-      console.error(error);
-    }
-  };
-
-  if (loading) {
-    return <p>Carregando usuários...</p>;
-  }
-
-  return (
-    <div className={styles.tableContainer}>
-      <h2>Gerenciamento de Usuários</h2>
-      {users.length === 0 ? (
-        <p>Nenhum usuário cadastrado.</p>
-      ) : (
-        <table className={styles.userTable}>
-          <thead>
-            <tr>
-              <th>ID Telegram</th>
-              <th>Nome</th>
-              <th>DDD</th>
-              <th>Canal</th>
-              <th>Cargo</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.telegram_id}>
-                <td>{user.telegram_id}</td>
-                {/* CORREÇÃO: Trocado "user.nome_completo" por "user.first_name" */}
-                <td>{user.first_name}</td>
-                <td>{user.ddd}</td>
-                <td>{user.canal_principal}</td>
-                <td>{user.cargo}</td>
-                <td>
-                  <button 
-                    className={styles.excludeButton}
-                    // CORREÇÃO: Passando "user.first_name" para a mensagem de confirmação
-                    onClick={() => handleExcludeUser(user.telegram_id, user.first_name)}
-                  >
-                    Excluir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-};
+    return (
+        <div className={styles.tableContainer}>
+            <div className={styles.toolbar}>
+                <div className={styles.searchBox}>
+                    <span className={styles.searchIcon}><SearchIcon /></span>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome, ID, cargo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className={styles.userCount}>
+                    {sortedAndFilteredUsers.length} de {users.length} usuários
+                </div>
+            </div>
+            <div className={styles.tableWrapper}>
+                <table className={styles.userTable}>
+                    <thead>
+                        <tr>
+                            <SortableHeader name="telegram_id">ID Telegram</SortableHeader>
+                            <SortableHeader name="first_name">Nome</SortableHeader>
+                            <SortableHeader name="cargo">Cargo</SortableHeader>
+                            <SortableHeader name="canal_principal">Canal</SortableHeader>
+                            <SortableHeader name="data_cadastro">Data Cadastro</SortableHeader>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedAndFilteredUsers.map(user => (
+                            <tr key={user.telegram_id}>
+                                <td data-label="ID Telegram">{user.telegram_id}</td>
+                                <td data-label="Nome">{user.first_name}</td>
+                                <td data-label="Cargo">{user.cargo || 'N/A'}</td>
+                                <td data-label="Canal">{user.canal_principal || 'N/A'}</td>
+                                <td data-label="Data Cadastro">{user.data_cadastro ? new Date(user.data_cadastro).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                                <td data-label="Ações">
+                                    <div className={styles.actionButtons}>
+                                        <button className={`${styles.actionButton} ${styles.editButton}`}>Editar</button>
+                                        <button className={`${styles.actionButton} ${styles.deleteButton}`}>Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
 
 export default UserManagementTable;

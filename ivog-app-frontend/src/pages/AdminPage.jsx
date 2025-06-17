@@ -6,7 +6,7 @@ import { useConfigStore } from '../store/configStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useUserStore } from '../store/userStore';
 import PillFormModal from '../components/PillFormModal';
-import UserManagementTable from '../components/UserManagementTable'; // NOVO: 1. Importar o componente da tabela
+import UserManagementTable from '../components/UserManagementTable';
 
 const getInitialFormData = () => ({
     id: null,
@@ -25,7 +25,7 @@ function AdminHeader({ activeTab, onTabChange }) {
     const tabs = [
         { id: 'overview', label: 'Visão Geral', icon: '📊' },
         { id: 'admins', label: 'Administradores', icon: '👥' },
-        { id: 'users', label: 'Usuários', icon: '👤' }, // NOVO: 2. Adicionar a aba de Usuários
+        { id: 'users', label: 'Usuários', icon: '👤' },
         { id: 'pills', label: 'Pílulas', icon: '💊' },
         { id: 'challenges', label: 'Desafios', icon: '🎯' },
         { id: 'questions', label: 'Perguntas', icon: '❓' },
@@ -34,10 +34,10 @@ function AdminHeader({ activeTab, onTabChange }) {
     return (
         <div className={styles.adminHeader}>
             <div className={styles.headerTop}>
-                <h1 className={styles.pageTitle}>
-                    <span className={styles.titleIcon}>⚙️</span>
+                {/* <h1 className={styles.pageTitle}>
+                <span className={styles.titleIcon}>⚙️</span>
                     Painel Administrativo
-                </h1>
+                </h1> */}
                 <div className={styles.headerActions}>
                     <Link to="/admin/dashboard" className={styles.dashboardButton}>
                         <span>📈</span>
@@ -61,7 +61,6 @@ function AdminHeader({ activeTab, onTabChange }) {
     );
 }
 
-// NOVO: 3. Criar a seção para o conteúdo da nova aba
 function UserManagementSection() {
     return (
         <div className={styles.tabContent}>
@@ -75,10 +74,6 @@ function UserManagementSection() {
     );
 }
 
-
-// O resto do seu arquivo continua aqui (OverviewSection, ChallengeFormModal, AdminManagement, etc.)
-// ... (COLE O RESTO DO SEU CÓDIGO ORIGINAL DA AdminPage.jsx AQUI)
-// ...
 
 // Componente de Visão Geral
 function OverviewSection() {
@@ -465,7 +460,6 @@ function KnowledgePillsManagement() {
     const handleImportCsv = async () => {
     if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
 
-    // Validação do arquivo
     if (!csvFile.name.toLowerCase().endsWith('.csv')) {
         addToast('Por favor, selecione um arquivo CSV válido.', 'error');
         return;
@@ -478,7 +472,6 @@ function KnowledgePillsManagement() {
 
     showLoading();
     try {
-        // Ler o conteúdo do arquivo CSV
         const csvContent = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target.result);
@@ -488,7 +481,6 @@ function KnowledgePillsManagement() {
 
         console.log('📄 Conteúdo CSV lido:', csvContent.substring(0, 200) + '...');
 
-        // Enviar como JSON
         const response = await api.post('/admin/pills/import-csv', {
             csvContent: csvContent,
             fileName: csvFile.name
@@ -737,7 +729,6 @@ function KnowledgePillsManagement() {
                     </div>
                 </div>
 
-                {/* Seção de Configurações */}
                 <div className={styles.configSection}>
                     <h3>⚙️ Configurações de Envio</h3>
                     <div className={styles.configGrid}>
@@ -768,7 +759,6 @@ function KnowledgePillsManagement() {
                     </div>
                 </div>
 
-                {/* Horário Silencioso */}
                 <div className={styles.quietTimeSection}>
                     <h3>🌙 Horário Silencioso</h3>
                     <div className={styles.quietTimeCard}>
@@ -822,43 +812,42 @@ function KnowledgePillsManagement() {
                     </div>
                 </div>
 
-                {/* Seção de Importação */}
                 <div className={styles.importSection}>
                     <h3>📁 Gerenciar Conteúdo</h3>
                     <div className={styles.importSteps}>
                         <div className={styles.importStep}>
-    <div className={styles.stepNumber}>1</div>
-    <div className={styles.stepContent}>
-        <h4>Importar CSV</h4>
-        <div className={styles.fileUpload}>
-            <input 
-                type="file" 
-                accept=".csv" 
-                ref={csvInputRef} 
-                onChange={(e) => setCsvFile(e.target.files[0])}
-                className={styles.fileInput}
-            />
-            {csvFile && (
-                <div className={styles.fileInfo}>
-                    <span className={styles.fileName}>📄 {csvFile.name}</span>
-                    <span className={styles.fileSize}>({(csvFile.size / 1024).toFixed(1)} KB)</span>
-                </div>
-            )}
-            <button 
-                onClick={handleImportCsv} 
-                className={styles.uploadButton} 
-                disabled={!csvFile}
-            >
-                📤 Importar CSV
-            </button>
-        </div>
-        <div className={styles.csvHelp}>
-            <small>
-                ℹ️ Formato: CARGO;TEMA;CONTEUDO;ARQUIVO_DE_ORIGEM;PAGINA
-            </small>
-        </div>
-    </div>
-</div>
+                            <div className={styles.stepNumber}>1</div>
+                            <div className={styles.stepContent}>
+                                <h4>Importar CSV</h4>
+                                <div className={styles.fileUpload}>
+                                    <input 
+                                        type="file" 
+                                        accept=".csv" 
+                                        ref={csvInputRef} 
+                                        onChange={(e) => setCsvFile(e.target.files[0])}
+                                        className={styles.fileInput}
+                                    />
+                                    {csvFile && (
+                                        <div className={styles.fileInfo}>
+                                            <span className={styles.fileName}>📄 {csvFile.name}</span>
+                                            <span className={styles.fileSize}>({(csvFile.size / 1024).toFixed(1)} KB)</span>
+                                        </div>
+                                    )}
+                                    <button 
+                                        onClick={handleImportCsv} 
+                                        className={styles.uploadButton} 
+                                        disabled={!csvFile}
+                                    >
+                                        📤 Importar CSV
+                                    </button>
+                                </div>
+                                <div className={styles.csvHelp}>
+                                    <small>
+                                        ℹ️ Formato: CARGO;TEMA;CONTEUDO;ARQUIVO_DE_ORIGEM;PAGINA
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className={styles.importStep}>
                             <div className={styles.stepNumber}>2</div>
@@ -895,7 +884,6 @@ function KnowledgePillsManagement() {
                     </div>
                 </div>
 
-                {/* Toolbar e Lista de Pílulas */}
                 <div className={styles.pillsToolbar}>
                     <button 
                         onClick={() => { setEditingPill(null); setIsPillModalOpen(true); }} 
@@ -914,63 +902,65 @@ function KnowledgePillsManagement() {
                 </div>
 
                 <div className={styles.pillsTable}>
-                    <div className={styles.tableHeader}>
-                        <div className={styles.checkboxColumn}>
-                            <input 
-                                type="checkbox" 
-                                checked={pills.length > 0 && selectedPillIds.length === pills.length} 
-                                onChange={handleSelectAllPills}
-                                className={styles.headerCheckbox}
-                            />
-                        </div>
-                        <div className={styles.idColumn}>ID</div>
-                        <div className={styles.contentColumn}>Conteúdo</div>
-                        <div className={styles.fileColumn}>Arquivo</div>
-                        <div className={styles.statusColumn}>Status</div>
-                        <div className={styles.actionsColumn}>Ações</div>
-                    </div>
-                    
-                    <div className={styles.tableBody}>
-                        {pills.map(pill => (
-                            <div key={pill.id} className={styles.tableRow}>
-                                <div className={styles.checkboxColumn}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedPillIds.includes(pill.id)} 
-                                        onChange={() => handleSelectPill(pill.id)}
-                                        className={styles.rowCheckbox}
-                                    />
-                                </div>
-                                <div className={styles.idColumn}>#{pill.id}</div>
-                                <div className={styles.contentColumn}>
-                                    <div className={styles.pillContent}>{pill.conteudo}</div>
-                                </div>
-                                <div className={styles.fileColumn}>
-                                    {pill.source_file && (
-                                        <span className={styles.fileName}>{pill.source_file}</span>
-                                    )}
-                                </div>
-                                <div className={styles.statusColumn}>
-                                    <span className={`${styles.statusBadge} ${pill.telegram_file_id ? styles.synced : styles.pending}`}>
-                                        {pill.telegram_file_id ? '✅ Sincronizado' : '⏳ Pendente'}
-                                    </span>
-                                </div>
-                                <div className={styles.actionsColumn}>
-                                    <button 
-                                        onClick={() => { setEditingPill(pill); setIsPillModalOpen(true); }} 
-                                        className={styles.editButton}
-                                    >
-                                        ✏️
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeletePill(pill.id)} 
-                                        className={styles.deleteButtonSmall}
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
+                    <div className={styles.tableWrapper}>
+                        <div className={styles.tableHeader}>
+                            <div className={styles.checkboxColumn}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={pills.length > 0 && selectedPillIds.length === pills.length} 
+                                    onChange={handleSelectAllPills}
+                                    className={styles.headerCheckbox}
+                                />
                             </div>
-                        ))}
+                            <div className={styles.idColumn}>ID</div>
+                            <div className={styles.contentColumn}>Conteúdo</div>
+                            <div className={styles.fileColumn}>Arquivo</div>
+                            <div className={styles.statusColumn}>Status</div>
+                            <div className={styles.actionsColumn}>Ações</div>
+                        </div>
+                        
+                        <div className={styles.tableBody}>
+                            {pills.map(pill => (
+                                <div key={pill.id} className={styles.tableRow}>
+                                    <div className={styles.checkboxColumn} data-label="">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedPillIds.includes(pill.id)} 
+                                            onChange={() => handleSelectPill(pill.id)}
+                                            className={styles.rowCheckbox}
+                                        />
+                                    </div>
+                                    <div className={styles.idColumn} data-label="ID">#{pill.id}</div>
+                                    <div className={styles.contentColumn} data-label="Conteúdo">
+                                        <div className={styles.pillContent}>{pill.conteudo}</div>
+                                    </div>
+                                    <div className={styles.fileColumn} data-label="Arquivo">
+                                        {pill.source_file && (
+                                            <span className={styles.fileName}>{pill.source_file}</span>
+                                        )}
+                                    </div>
+                                    <div className={styles.statusColumn} data-label="Status">
+                                        <span className={`${styles.statusBadge} ${pill.telegram_file_id ? styles.synced : styles.pending}`}>
+                                            {pill.telegram_file_id ? '✅ Sincronizado' : '⏳ Pendente'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.actionsColumn} data-label="Ações">
+                                        <button 
+                                            onClick={() => { setEditingPill(pill); setIsPillModalOpen(true); }} 
+                                            className={styles.editButton}
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeletePill(pill.id)} 
+                                            className={styles.deleteButtonSmall}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -1202,7 +1192,7 @@ function AdminPage() {
                 return <OverviewSection />;
             case 'admins':
                 return <AdminManagement />;
-            case 'users': // NOVO: 4. Adicionar a renderização do conteúdo da nova aba
+            case 'users': 
                 return <UserManagementSection />;
             case 'pills':
                 return <KnowledgePillsManagement />;

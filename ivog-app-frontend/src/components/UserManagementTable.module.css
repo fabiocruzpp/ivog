@@ -1,65 +1,214 @@
+/* Estilos para o container da tabela e barra de ferramentas */
 .tableContainer {
-  width: 100%;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0 0.75rem;
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+.searchBox:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.searchBox input {
+    border: none;
+    outline: none;
+    padding: 0.75rem 0.5rem;
+    background: transparent;
+    width: 100%;
+    color: #1e293b;
+}
+
+.searchIcon {
+    color: #9ca3af;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.userCount {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .userTable {
-  width: 100%;
-  border-collapse: collapse;
-  color: #f0f0f0;
+    width: 100%;
+    border-collapse: collapse;
+    color: #374151;
 }
 
 .userTable th,
 .userTable td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #4a4a5a;
-  text-align: left;
-  word-break: break-word;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.userTable thead {
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .userTable th {
-  background-color: #3a3a4a;
-  font-weight: bold;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sortIcon {
+    width: 1rem;
+    height: 1rem;
+    color: #6366f1;
+}
+
+.userTable tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.userTable tbody tr:last-child {
+    border-bottom: none;
 }
 
 .userTable tbody tr:hover {
-  background-color: #3a3a4a;
+    background-color: #f8fafc;
 }
 
-.excludeButton {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
+/* Estilos para botões de ação */
+.actionButtons {
+    display: flex;
+    gap: 0.5rem;
 }
 
-.excludeButton:hover {
-  background-color: #c0392b;
+.actionButton {
+    padding: 0.375rem 0.75rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
 }
 
+.editButton {
+    background-color: #3b82f6;
+}
+
+.editButton:hover {
+    background-color: #2563eb;
+}
+
+.deleteButton {
+    background-color: #ef4444;
+}
+
+.deleteButton:hover {
+    background-color: #dc2626;
+}
+
+/* Estilos de Carregamento */
 .loadingContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px;
-    color: #fff;
+    color: #64748b;
 }
 
 .loadingSpinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #fff;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #6366f1;
     border-radius: 50%;
     width: 40px;
     height: 40px;
     animation: spin 1s linear infinite;
-    margin-bottom: 10px;
+    margin-bottom: 1rem;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- Layout Responsivo para Celulares --- */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .searchBox {
+        max-width: none;
+    }
+
+    .userTable thead {
+        display: none; /* Esconde o cabeçalho da tabela */
+    }
+
+    .userTable tr {
+        display: block;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .userTable td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: right;
+        white-space: normal;
+    }
+
+    .userTable td:last-child {
+        border-bottom: none;
+    }
+
+    /* Usa o data-label para criar o título da coluna */
+    .userTable td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #1e293b;
+        text-align: left;
+        margin-right: 1rem;
+    }
 }

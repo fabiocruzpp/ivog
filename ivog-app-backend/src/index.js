@@ -26,7 +26,7 @@ app.use(express.json());
 
 // Rotas públicas e de autenticação
 app.use('/api/auth', authRoutes);
-app.use('/api', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api', optionsRoutes); 
 app.use('/api/quiz', quizRoutes);
 app.use('/api', rankingRoutes);

@@ -198,13 +198,6 @@
   background: #6b7280;
 }
 
-.cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
 .cardIcon {
   font-size: 1.5rem;
   opacity: 0.8;
@@ -776,6 +769,7 @@
 
 .stepContent {
   flex: 1;
+  min-width: 0; 
 }
 
 .stepContent h4 {
@@ -799,6 +793,8 @@
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .fileInput:hover {
@@ -827,6 +823,14 @@
   cursor: not-allowed;
 }
 
+.csvHelp {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+  word-break: break-word; 
+}
+
+
 /* Pills Table */
 .pillsToolbar {
   display: flex;
@@ -844,12 +848,16 @@
 
 .pillsTable {
   background: white;
-  border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   overflow: hidden;
 }
 
-.tableHeader {
+.tableWrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.pillsTable .tableHeader {
   display: grid;
   grid-template-columns: 40px 60px 1fr 120px 120px 100px;
   background: #f8fafc;
@@ -861,33 +869,33 @@
   color: #64748b;
 }
 
-.tableHeader > div {
+.pillsTable .tableHeader > div {
   padding: 0.75rem 0.5rem;
   display: flex;
   align-items: center;
 }
 
-.tableBody {
-  max-height: 600px;
-  overflow-y: auto;
+.pillsTable .tableBody {
+  /* Estilos do corpo da tabela */
 }
 
-.tableRow {
+.pillsTable .tableRow {
   display: grid;
   grid-template-columns: 40px 60px 1fr 120px 120px 100px;
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.2s ease;
 }
 
-.tableRow:hover {
+.pillsTable .tableRow:hover {
   background: #f8fafc;
 }
 
-.tableRow > div {
+.pillsTable .tableRow > div {
   padding: 0.75rem 0.5rem;
   display: flex;
   align-items: center;
   font-size: 0.875rem;
+  word-break: break-word; 
 }
 
 .checkboxColumn,
@@ -1065,7 +1073,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 1050;
   padding: 1rem;
 }
 
@@ -1206,10 +1214,6 @@
     grid-template-columns: 1fr;
   }
   
-  .importSteps {
-    grid-template-columns: 1fr;
-  }
-  
   .challengesGrid {
     grid-template-columns: 1fr;
   }
@@ -1228,25 +1232,6 @@
     align-items: stretch;
   }
   
-  .tableHeader,
-  .tableRow {
-    grid-template-columns: 40px 1fr 80px;
-  }
-  
-  .idColumn,
-  .fileColumn,
-  .statusColumn {
-    display: none;
-  }
-  
-  .contentColumn {
-    grid-column: 2;
-  }
-  
-  .actionsColumn {
-    grid-column: 3;
-  }
-  
   .timeConfig {
     flex-direction: column;
     align-items: stretch;
@@ -1263,8 +1248,86 @@
   }
   
   .formActions {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
+
+  .formActions > button {
+    justify-content: center;
+  }
+
+  /* --- INÍCIO DAS CORREÇÕES --- */
+  
+  .importSteps {
+    grid-template-columns: 1fr;
+  }
+  
+  .importStep {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fileUpload {
+    align-items: stretch;
+  }
+  
+  .fileUpload > button, .fileUpload > input {
+    width: 100%;
+  }
+
+  /* Tabela de Pílulas Responsiva */
+  .pillsTable .tableHeader {
+    display: none;
+  }
+
+  .pillsTable .tableRow {
+    display: block;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .pillsTable .tableRow > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: right;
+  }
+
+  .pillsTable .tableRow > div:last-child {
+    border-bottom: none;
+  }
+
+  .pillsTable .tableRow > div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+    margin-right: 1rem;
+  }
+
+  .pillsTable .pillContent {
+    white-space: normal;
+    text-align: right;
+  }
+  
+  .pillsTable .fileName {
+    text-align: right;
+    word-break: break-all;
+  }
+
+  .pillsTable .checkboxColumn::before {
+    content: '';
+  }
+
+  .pillsTable .actionsColumn {
+    justify-content: flex-end;
+  }
+  
+  /* --- FIM DAS CORREÇÕES --- */
 }
 
 @media (max-width: 480px) {
