@@ -32,7 +32,7 @@
     text-align: center;
     flex-grow: 1;
     margin: 0;
-    padding-right: 40px; /* Compensa o botão de voltar */
+    padding-right: 40px; /* Compensa o bot√£o de voltar */
 }
 
 .contentArea {
@@ -54,7 +54,7 @@
 .challengesGrid {
     display: grid;
     gap: 15px;
-    grid-template-columns: 1fr; /* Uma coluna por padrão */
+    grid-template-columns: 1fr; /* Uma coluna por padr√£o */
 }
 
 .challengeCard {
@@ -66,12 +66,27 @@
     display: flex;
     flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer; /* Cursor padrão para cards interativos */
 }
 
 .challengeCard:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
+
+/* Estilos para cards desabilitados/concluídos/expirados */
+.challengeCard.disabled {
+    opacity: 0.6; /* Diminui a opacidade do card */
+    cursor: not-allowed; /* Indica que não é clicável */
+    transform: none; /* Remove o efeito hover */
+    box-shadow: none; /* Remove a sombra do hover */
+}
+
+.challengeCard.disabled:hover {
+     transform: none;
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Mantém a sombra original */
+}
+
 
 .cardHeader {
     background-color: var(--primary-light-purple);
@@ -108,10 +123,25 @@
     border-top: 1px solid var(--primary-background);
 }
 
-.participateButton {
+.cardFooter .participateButton {
     background-color: var(--primary-dark-purple);
     color: var(--secondary-white);
     padding: 6px 12px;
     border-radius: 16px;
     font-weight: 600;
+}
+
+/* Estilo para o botão/texto de status quando desabilitado */
+.challengeCard.disabled .participateButton {
+    background-color: var(--secondary-dark-grey); /* Cor diferente para indicar desabilitado */
+    color: var(--secondary-white);
+}
+
+/* Opcional: Cores específicas para estados concluído/expirado */
+.challengeCard.completed .participateButton {
+    background-color: var(--feedback-correct-text); /* Exemplo: Verde */
+}
+
+.challengeCard.expired .participateButton {
+    background-color: var(--feedback-incorrect-text); /* Exemplo: Vermelho */
 }

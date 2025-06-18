@@ -6,7 +6,7 @@ const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// NOVO CONTROLLER
+// NOVO CONTROLLER (existente)
 export const getAvailableThemesController = async (req, res) => {
     try {
         const { telegram_id } = req.query;
@@ -51,21 +51,88 @@ export const startQuizController = async (req, res) => {
     const isTrainingMode = is_training === 'true';
 
     if (desafio_id) {
-      // Lógica de desafio permanece a mesma
+      // --- Lógica de desafio modificada ---
       contextoDesafio = `desafio_id:${desafio_id}`;
       const challenge = await dbGet("SELECT * FROM desafios WHERE id = ?", [desafio_id]);
-      if (!challenge) return res.status(404).json({ message: "Desafio não encontrado." });
+      
+      if (!challenge) {
+          console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} não encontrado.`);
+          return res.status(404).json({ message: "Desafio não encontrado." });
+      }
+
+      // Verifica se o desafio está ativo e não expirado
+      const now = new Date();
+      const startDate = new Date(challenge.data_inicio);
+      const endDate = new Date(challenge.data_fim);
+
+      if (challenge.status !== 'ativo' || now < startDate) {
+           console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} não está ativo.`);
+           return res.status(400).json({ message: "Desafio não está ativo no momento." });
+      }
+
+      if (now > endDate) {
+           console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} expirado.`);
+           return res.status(400).json({ message: "Desafio expirado." });
+      }
+
+      // Verifica se o usuário já concluiu o desafio
+      const completedCount = await dbGet(
+          `SELECT COUNT(*) AS count
+           FROM simulados s
+           JOIN resultados r ON s.id_simulado = r.id_simulado
+           WHERE s.telegram_id = ? AND s.contexto_desafio = ?`,
+          [telegram_id, contextoDesafio]
+      );
+
+      if (completedCount.count > 0) {
+          console.log(`[START QUIZ CONTROLLER] Usuário ${telegram_id} já concluiu o desafio ID ${desafio_id}.`);
+          return res.status(400).json({ message: "Você já concluiu este desafio." });
+      }
+
+      // Lógica original para filtrar perguntas com base nos filtros do desafio
       const challengeFilters = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio_id]);
-      if (challengeFilters.length === 0) return res.status(404).json({ message: "Desafio inválido." });
+      if (challengeFilters.length === 0) {
+          console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} sem filtros.`);
+          return res.status(404).json({ message: "Desafio inválido (sem filtros)." });
+      }
       const temaFiltro = challengeFilters.find(f => f.tipo_filtro === 'tema')?.valor_filtro;
       const subtemaFiltro = challengeFilters.find(f => f.tipo_filtro === 'subtema')?.valor_filtro;
       let filteredQuestions = allQuestions;
       if (temaFiltro) filteredQuestions = filteredQuestions.filter(q => q.tema === temaFiltro);
       if (subtemaFiltro) filteredQuestions = filteredQuestions.filter(q => q.subtema === subtemaFiltro);
+      
+      // Garante que o perfil do usuário corresponde ao público alvo do desafio
+      const userProfile = await dbGet("SELECT * FROM usuarios WHERE telegram_id = ?", [telegram_id]);
+      let userIsTarget = false;
+      try {
+          const publicoAlvo = JSON.parse(challenge.publico_alvo_json);
+          // Reutiliza a lógica de userMatchesTarget
+          const userMatchesTarget = (userProfile, publicoAlvo) => {
+              if (!publicoAlvo || Object.keys(publicoAlvo).length === 0) return true;
+              for (const key in publicoAlvo) {
+                  const ruleValues = publicoAlvo[key];
+                  if (!ruleValues || !Array.isArray(ruleValues) || ruleValues.length === 0) continue;
+                  const userValue = userProfile[key];
+                  if (!userValue || !ruleValues.includes(userValue)) return false;
+              }
+              return true;
+          };
+          userIsTarget = userMatchesTarget(userProfile, publicoAlvo);
+      } catch (e) {
+          console.error(`Erro ao parsear JSON do desafio ID ${challenge.id} em startQuizController:`, e);
+          userIsTarget = false;
+      }
+
+      if (!userIsTarget) {
+          console.log(`[START QUIZ CONTROLLER] Usuário ${telegram_id} não é público alvo do desafio ID ${desafio_id}.`);
+          return res.status(403).json({ message: "Você não faz parte do público alvo deste desafio." });
+      }
+
+
       quizQuestions = filteredQuestions.sort(() => 0.5 - Math.random()).slice(0, challenge.num_perguntas);
 
     } else {
-      // Lógica para Simulado Livre e Modo Treino
+      // Lógica para Simulado Livre e Modo Treino (permanece a mesma)
       let userFilteredQuestions = allQuestions.filter(q => 
           (q.canal.length === 0 || q.canal.includes(canal_principal)) && 
           (q.publico.length === 0 || q.publico.includes(cargo))
@@ -85,7 +152,11 @@ export const startQuizController = async (req, res) => {
         return res.status(404).json({ message: "Não há perguntas disponíveis para seu perfil e filtros selecionados." });
       }
       
-      quizQuestions = userFilteredQuestions.sort(() => 0.5 - Math.random()).slice(0, 20);
+      // Usa a configuração num_max_perguntas_simulado para simulados não-desafio
+      const config = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'num_max_perguntas_simulado'");
+      const maxQuestions = config ? parseInt(config.valor, 10) : 20; // Padrão 20 se a config não for encontrada
+      
+      quizQuestions = userFilteredQuestions.sort(() => 0.5 - Math.random()).slice(0, maxQuestions);
     }
 
     if (quizQuestions.length === 0) {
@@ -95,11 +166,11 @@ export const startQuizController = async (req, res) => {
 
     const dataInicio = new Date().toISOString();
     
-    // CORREÇÃO: Usando um wrapper de Promise para capturar o lastID
+    // Usando um wrapper de Promise para db.run para capturar o lastID
     const result = await new Promise((resolve, reject) => {
         db.run(
           `INSERT INTO simulados (telegram_id, data_inicio, contexto_desafio, is_training) VALUES (?, ?, ?, ?)`,
-          [telegram_id, dataInicio, contextoDesafio, isTrainingMode],
+          [telegram_id, dataInicio, contextoDesafio, isTrainingMode ? 1 : 0], // SQLite usa 1/0 para BOOLEAN
           function(err) {
             if (err) return reject(err);
             resolve(this); // 'this' contém lastID e changes
@@ -122,6 +193,7 @@ export const startQuizController = async (req, res) => {
   }
 };
 
+// Mantenha os outros controllers (saveAnswerController, finishQuizController) como estão.
 export const saveAnswerController = async (req, res) => {
   try {
     console.log('[SAVE ANSWER CONTROLLER] Requisição recebida:', req.body);
