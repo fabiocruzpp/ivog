@@ -65,7 +65,7 @@ function ResultsPage() {
                   <p>Suas 3 melhores pontuações do dia (Simulados Normais):</p>
                   <div className={styles.scoresList}>
                       {topTodayScores.length > 0 
-                          ? topTodayScores.map((score, index) => <span key={index} className={styles.scoreItem}>{score} Pts</span>)
+                          ? topTodayScores.map((score, index) => <span key={index} className={styles.scoreItem}>{score}Pts </span>)
                           : <span>-</span>
                       }
                   </div>

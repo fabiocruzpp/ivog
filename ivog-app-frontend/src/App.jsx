@@ -25,7 +25,8 @@ const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage')
 
 const PageLayout = () => {
   const location = useLocation();
-  const showHeader = location.pathname !== '/';
+  // O header não será exibido na página principal e nem na de resultados do quiz
+  const showHeader = location.pathname !== '/' && location.pathname !== '/quiz/results';
 
   return (
     <>

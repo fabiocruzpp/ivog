@@ -77,10 +77,10 @@ export const getMyStatsController = async (req, res) => {
     }));
     
     const desempenho_subtemas_formatado = desempenhoSubtemasResult.map(item => ({
-         subtema: item.categoria_valor,
-         acertos_brutos: item.acertos_brutos || 0,
-         total_respostas: item.total_respostas,
-         percentual_acerto_bruto: item.total_respostas > 0 ? parseFloat((item.acertos_brutos / item.total_respostas * 100).toFixed(2)) : 0,
+          subtema: item.categoria_valor,
+          acertos_brutos: item.acertos_brutos || 0,
+          total_respostas: item.total_respostas,
+          percentual_acerto_bruto: item.total_respostas > 0 ? parseFloat((item.acertos_brutos / item.total_respostas * 100).toFixed(2)) : 0,
     }));
 
     // 5. Envia a resposta consolidada

@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import styles from './StatsPage.module.css';
 
-// Ícone do BackArrow foi removido pois não é mais usado aqui
-
 const TemaIcon = () => (
     <svg viewBox="0 0 24 24" fill="var(--primary-dark-purple)"><path d="M12 3L2 9l10 6 10-6-10-6zm0 13.66L5.5 12 12 8.34 18.5 12 12 16.66zM2 15l10 6 10-6v-2.03l-10 6-10-6V15z"></path></svg>
 );
@@ -32,15 +30,16 @@ function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tgUser, setTgUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('temas');
+  const [activeTab, setActiveTab] = useState('subtemas');
 
   useEffect(() => {
     const fetchAllData = async (telegramId) => {
       try {
         setLoading(true);
+        // A rota da API para user foi ajustada para o padrão que implementamos anteriormente
         const [statsResponse, userProfileResponse] = await Promise.all([
           api.get('/stats/my_stats', { params: { telegram_id: telegramId } }),
-          api.get(`/user/${telegramId}`)
+          api.get(`/user/user/${telegramId}`)
         ]);
         setStatsData(statsResponse.data);
         setTgUser(userProfileResponse.data);
@@ -91,22 +90,22 @@ function StatsPage() {
         </div>
 
         <div className={styles.tabsNavigation}>
-          <button onClick={() => setActiveTab('temas')} className={`${styles.tabButton} ${activeTab === 'temas' ? styles.active : ''}`}>Por Tema</button>
+          <button onClick={() => setActiveTab('subtemas')} className={`${styles.tabButton} ${activeTab === 'subtemas' ? styles.active : ''}`}>Por Subtema</button>
           <button onClick={() => setActiveTab('desafios')} className={`${styles.tabButton} ${activeTab === 'desafios' ? styles.active : ''}`}>Desafios</button>
         </div>
 
         <div className={styles.contentArea}>
-            <div className={`${styles.tabContent} ${activeTab === 'temas' ? styles.active : ''}`}>
-                {statsData.desempenho_temas.length > 0
-                    ? statsData.desempenho_temas.map(t => <PerformanceItem key={t.tema} icon={<TemaIcon />} title={t.tema} value={t.acertos_brutos} total={t.total_respostas} percentage={t.percentual_acerto_bruto} />)
-                    : <p className={styles.noDataMessage}>Sem dados de desempenho por tema.</p>
+            <div className={`${styles.tabContent} ${activeTab === 'subtemas' ? styles.active : ''}`}>
+                {statsData.desempenho_subtemas && statsData.desempenho_subtemas.length > 0
+                    ? statsData.desempenho_subtemas.map(s => <PerformanceItem key={s.subtema} icon={<TemaIcon />} title={s.subtema} value={s.acertos_brutos} total={s.total_respostas} percentage={s.percentual_acerto_bruto} />)
+                    : <p className={styles.noDataMessage}>Sem dados de desempenho por subtema.</p>
                 }
             </div>
             <div className={`${styles.tabContent} ${activeTab === 'desafios' ? styles.active : ''}`}>
-                 {statsData.desafios_participados.length > 0
-                    ? statsData.desafios_participados.map(d => <PerformanceItem key={d} icon={<DesafioIcon />} title={d.replace(/.*:/,'').replace(/_/g, ' ')} value="N/A" total="N/A" percentage="N/A" />)
+                 {statsData.desafios_participados && statsData.desafios_participados.length > 0
+                    ? statsData.desafios_participados.map(d => <PerformanceItem key={d} icon={<DesafioIcon />} title={d.replace(/.*:/,'').replace(/_/g, ' ')} value="N/A" total="N/A" percentage={0} />)
                     : <p className={styles.noDataMessage}>Você ainda não participou de desafios.</p>
-                }
+                 }
             </div>
         </div>
       </>
@@ -115,7 +114,6 @@ function StatsPage() {
 
   return (
     <div className={styles.screenContainer}>
-        {/* O headerBar antigo foi removido daqui */}
         {renderContent()}
     </div>
   );
