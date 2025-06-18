@@ -44,145 +44,56 @@ export const startQuizController = async (req, res) => {
     }
 
     const allQuestions = await loadAllQuestions();
-    console.log('[START QUIZ CONTROLLER] Total de perguntas carregadas:', allQuestions.length);
     
     let quizQuestions = [];
-    let contextoDesafio = null;
     const isTrainingMode = is_training === 'true';
 
     if (desafio_id) {
-      // --- Lógica de desafio modificada ---
-      contextoDesafio = `desafio_id:${desafio_id}`;
       const challenge = await dbGet("SELECT * FROM desafios WHERE id = ?", [desafio_id]);
+      if (!challenge) return res.status(404).json({ message: "Desafio não encontrado." });
       
-      if (!challenge) {
-          console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} não encontrado.`);
-          return res.status(404).json({ message: "Desafio não encontrado." });
-      }
-
-      // Verifica se o desafio está ativo e não expirado
       const now = new Date();
-      const startDate = new Date(challenge.data_inicio);
-      const endDate = new Date(challenge.data_fim);
-
-      if (challenge.status !== 'ativo' || now < startDate) {
-           console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} não está ativo.`);
-           return res.status(400).json({ message: "Desafio não está ativo no momento." });
+      if (challenge.status !== 'ativo' || now < new Date(challenge.data_inicio) || now > new Date(challenge.data_fim)) {
+           return res.status(400).json({ message: "Desafio não está ativo." });
       }
 
-      if (now > endDate) {
-           console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} expirado.`);
-           return res.status(400).json({ message: "Desafio expirado." });
-      }
-
-      // Verifica se o usuário já concluiu o desafio
-      const completedCount = await dbGet(
-          `SELECT COUNT(*) AS count
-           FROM simulados s
-           JOIN resultados r ON s.id_simulado = r.id_simulado
-           WHERE s.telegram_id = ? AND s.contexto_desafio = ?`,
-          [telegram_id, contextoDesafio]
-      );
-
-      if (completedCount.count > 0) {
-          console.log(`[START QUIZ CONTROLLER] Usuário ${telegram_id} já concluiu o desafio ID ${desafio_id}.`);
-          return res.status(400).json({ message: "Você já concluiu este desafio." });
-      }
-
-      // Lógica original para filtrar perguntas com base nos filtros do desafio
+      const completedCount = await dbGet(`SELECT COUNT(*) AS count FROM simulados s JOIN resultados r ON s.id_simulado = r.id_simulado WHERE s.telegram_id = ? AND s.contexto_desafio = ?`, [telegram_id, `desafio_id:${desafio_id}`]);
+      if (completedCount.count > 0) return res.status(400).json({ message: "Você já concluiu este desafio." });
+      
       const challengeFilters = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio_id]);
-      if (challengeFilters.length === 0) {
-          console.log(`[START QUIZ CONTROLLER] Desafio ID ${desafio_id} sem filtros.`);
-          return res.status(404).json({ message: "Desafio inválido (sem filtros)." });
-      }
       const temaFiltro = challengeFilters.find(f => f.tipo_filtro === 'tema')?.valor_filtro;
       const subtemaFiltro = challengeFilters.find(f => f.tipo_filtro === 'subtema')?.valor_filtro;
+      
       let filteredQuestions = allQuestions;
       if (temaFiltro) filteredQuestions = filteredQuestions.filter(q => q.tema === temaFiltro);
       if (subtemaFiltro) filteredQuestions = filteredQuestions.filter(q => q.subtema === subtemaFiltro);
       
-      // Garante que o perfil do usuário corresponde ao público alvo do desafio
-      const userProfile = await dbGet("SELECT * FROM usuarios WHERE telegram_id = ?", [telegram_id]);
-      let userIsTarget = false;
-      try {
-          const publicoAlvo = JSON.parse(challenge.publico_alvo_json);
-          // Reutiliza a lógica de userMatchesTarget
-          const userMatchesTarget = (userProfile, publicoAlvo) => {
-              if (!publicoAlvo || Object.keys(publicoAlvo).length === 0) return true;
-              for (const key in publicoAlvo) {
-                  const ruleValues = publicoAlvo[key];
-                  if (!ruleValues || !Array.isArray(ruleValues) || ruleValues.length === 0) continue;
-                  const userValue = userProfile[key];
-                  if (!userValue || !ruleValues.includes(userValue)) return false;
-              }
-              return true;
-          };
-          userIsTarget = userMatchesTarget(userProfile, publicoAlvo);
-      } catch (e) {
-          console.error(`Erro ao parsear JSON do desafio ID ${challenge.id} em startQuizController:`, e);
-          userIsTarget = false;
-      }
-
-      if (!userIsTarget) {
-          console.log(`[START QUIZ CONTROLLER] Usuário ${telegram_id} não é público alvo do desafio ID ${desafio_id}.`);
-          return res.status(403).json({ message: "Você não faz parte do público alvo deste desafio." });
-      }
-
-
       quizQuestions = filteredQuestions.sort(() => 0.5 - Math.random()).slice(0, challenge.num_perguntas);
 
     } else {
-      // Lógica para Simulado Livre e Modo Treino (permanece a mesma)
       let userFilteredQuestions = allQuestions.filter(q => 
           (q.canal.length === 0 || q.canal.includes(canal_principal)) && 
           (q.publico.length === 0 || q.publico.includes(cargo))
       );
       
-      console.log('[START QUIZ CONTROLLER] Perguntas filtradas por perfil:', userFilteredQuestions.length);
-      
-      // Filtro adicional para Modo Treino
       if (isTrainingMode && temas) {
           const selectedThemes = temas.split(',');
           userFilteredQuestions = userFilteredQuestions.filter(q => selectedThemes.includes(q.tema));
-          console.log('[START QUIZ CONTROLLER] Perguntas filtradas por tema:', userFilteredQuestions.length);
       }
 
-      if (userFilteredQuestions.length === 0) {
-        console.log('[START QUIZ CONTROLLER] Nenhuma pergunta disponível');
-        return res.status(404).json({ message: "Não há perguntas disponíveis para seu perfil e filtros selecionados." });
-      }
+      if (userFilteredQuestions.length === 0) return res.status(404).json({ message: "Não há perguntas disponíveis para seu perfil e filtros selecionados." });
       
-      // Usa a configuração num_max_perguntas_simulado para simulados não-desafio
       const config = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'num_max_perguntas_simulado'");
-      const maxQuestions = config ? parseInt(config.valor, 10) : 20; // Padrão 20 se a config não for encontrada
+      const maxQuestions = config ? parseInt(config.valor, 10) : 20;
       
       quizQuestions = userFilteredQuestions.sort(() => 0.5 - Math.random()).slice(0, maxQuestions);
     }
 
     if (quizQuestions.length === 0) {
-        console.log('[START QUIZ CONTROLLER] Nenhuma pergunta encontrada para os critérios');
         return res.status(404).json({ message: "Nenhuma pergunta encontrada para os critérios." });
     }
 
-    const dataInicio = new Date().toISOString();
-    
-    // Usando um wrapper de Promise para db.run para capturar o lastID
-    const result = await new Promise((resolve, reject) => {
-        db.run(
-          `INSERT INTO simulados (telegram_id, data_inicio, contexto_desafio, is_training) VALUES (?, ?, ?, ?)`,
-          [telegram_id, dataInicio, contextoDesafio, isTrainingMode ? 1 : 0], // SQLite usa 1/0 para BOOLEAN
-          function(err) {
-            if (err) return reject(err);
-            resolve(this); // 'this' contém lastID e changes
-          }
-        );
-    });
-
-    console.log('[START QUIZ CONTROLLER] Simulado criado com ID:', result.lastID);
-    console.log('[START QUIZ CONTROLLER] Total de perguntas no quiz:', quizQuestions.length);
-
     res.json({
-      simulado_id: result.lastID,
       total_perguntas_no_simulado: quizQuestions.length,
       questions: quizQuestions,
       is_training: isTrainingMode,
@@ -193,24 +104,40 @@ export const startQuizController = async (req, res) => {
   }
 };
 
-// Mantenha os outros controllers (saveAnswerController, finishQuizController) como estão.
 export const saveAnswerController = async (req, res) => {
   try {
-    console.log('[SAVE ANSWER CONTROLLER] Requisição recebida:', req.body);
+    let { simulado_id, telegram_id, acertou, is_training, contexto_desafio, ...rest } = req.body;
     
-    const { simulado_id, telegram_id, acertou, ...rest } = req.body;
-    if (simulado_id === undefined || telegram_id === undefined || acertou === undefined) {
-      console.log('[SAVE ANSWER CONTROLLER] Campos obrigatórios ausentes');
+    if (telegram_id === undefined || acertou === undefined) {
       return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+    }
+    
+    let newSimuladoId = null;
+
+    if (!simulado_id) {
+        // CORREÇÃO: Usando new Promise para garantir que o 'this' (com lastID) seja capturado.
+        const result = await new Promise((resolve, reject) => {
+            db.run(
+                "INSERT INTO simulados (telegram_id, data_inicio, is_training, contexto_desafio) VALUES (?, ?, ?, ?)",
+                [telegram_id, new Date().toISOString(), !!is_training, contexto_desafio || null],
+                function(err) {
+                    if (err) return reject(err);
+                    resolve(this); // 'this' contém lastID e changes
+                }
+            );
+        });
+
+        simulado_id = result.lastID;
+        newSimuladoId = simulado_id;
+        console.log(`[SAVE ANSWER CONTROLLER] Novo simulado criado com ID: ${simulado_id}`);
     }
     
     const sql = `INSERT INTO respostas_simulado (id_simulado, telegram_id, pergunta, resposta_usuario, resposta_correta, acertou, data, tema, subtema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [simulado_id, telegram_id, rest.pergunta, rest.resposta_usuario, rest.resposta_correta, acertou, new Date().toISOString(), rest.tema, rest.subtema];
     
     await dbRun(sql, params);
-    console.log('[SAVE ANSWER CONTROLLER] Resposta salva com sucesso');
     
-    res.status(200).json({ status: "success", message: "Resposta registrada." });
+    res.status(200).json({ status: "success", message: "Resposta registrada.", newSimuladoId });
   } catch (error) {
     console.error('[SAVE ANSWER CONTROLLER] Erro:', error);
     res.status(500).json({ error: 'Erro interno do servidor ao salvar resposta.' });

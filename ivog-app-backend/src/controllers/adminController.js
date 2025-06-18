@@ -224,30 +224,132 @@ export const getChallengeStatsController = async (req, res) => {
     }
 };
 
-// Funções de CRUD para desafios (se aplicável, mantenha ou remova conforme seu uso)
 export const createChallengeController = async (req, res) => {
-    // Implementação do CRUD de desafios
-    res.status(501).json({ message: "Não implementado" });
+    const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas } = req.body;
+    if (!titulo || !data_inicio || !data_fim || !publico_alvo || !filtros ) {
+        return res.status(400).json({ error: 'Campos obrigatórios estão ausentes.' });
+    }
+
+    const publicoAlvoJson = JSON.stringify(publico_alvo);
+
+    try {
+        await dbRun('BEGIN TRANSACTION');
+
+        const desafioId = await new Promise((resolve, reject) => {
+            db.run(
+                `INSERT INTO desafios (titulo, descricao, publico_alvo_json, data_inicio, data_fim, status, num_perguntas) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status || 'ativo', num_perguntas || 10],
+                function(err) {
+                    if (err) return reject(err);
+                    resolve(this.lastID);
+                }
+            );
+        });
+
+        for (const filtro of filtros) {
+            if (filtro.valor) {
+                await dbRun(
+                    `INSERT INTO desafio_filtros (desafio_id, tipo_filtro, valor_filtro) VALUES (?, ?, ?)`,
+                    [desafioId, filtro.tipo, filtro.valor]
+                );
+            }
+        }
+
+        await dbRun('COMMIT');
+        res.status(201).json({ message: 'Desafio criado com sucesso!', desafioId: desafioId });
+
+    } catch (err) {
+        await dbRun('ROLLBACK');
+        console.error("Erro ao criar desafio:", err);
+        res.status(500).json({ error: 'Falha ao criar o desafio no banco de dados.' });
+    }
 };
 
 export const listChallengesController = async (req, res) => {
-    // Implementação do CRUD de desafios
-    res.status(501).json({ message: "Não implementado" });
+  try {
+    const desafios = await dbAll("SELECT * FROM desafios ORDER BY data_inicio DESC");
+    const desafiosComFiltros = await Promise.all(
+        desafios.map(async (desafio) => {
+            const filtros = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio.id]);
+            return { ...desafio, filtros };
+        })
+    );
+    res.status(200).json(desafiosComFiltros);
+  } catch (error) {
+    console.error("Erro ao listar desafios:", error);
+    res.status(500).json({ error: "Erro interno do servidor ao listar desafios." });
+  }
 };
 
 export const updateChallengeController = async (req, res) => {
-    // Implementação do CRUD de desafios
-    res.status(501).json({ message: "Não implementado" });
+  const { id } = req.params;
+  const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas } = req.body;
+
+  if (!titulo || !data_inicio || !data_fim || !publico_alvo || !filtros) {
+    return res.status(400).json({ error: 'Campos obrigatórios estão ausentes.' });
+  }
+
+  const publicoAlvoJson = JSON.stringify(publico_alvo);
+
+  try {
+    await dbRun('BEGIN TRANSACTION');
+
+    await dbRun(
+        `UPDATE desafios SET titulo = ?, descricao = ?, publico_alvo_json = ?, data_inicio = ?, data_fim = ?, status = ?, num_perguntas = ? WHERE id = ?`,
+        [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status, num_perguntas || 10, id]
+    );
+
+    await dbRun("DELETE FROM desafio_filtros WHERE desafio_id = ?", [id]);
+
+    if (filtros.length > 0) {
+        for (const filtro of filtros) {
+            if (filtro.valor) {
+                await dbRun(
+                    `INSERT INTO desafio_filtros (desafio_id, tipo_filtro, valor_filtro) VALUES (?, ?, ?)`,
+                    [id, filtro.tipo, filtro.valor]
+                );
+            }
+        }
+    }
+
+    await dbRun('COMMIT');
+    res.status(200).json({ message: 'Desafio atualizado com sucesso!', desafioId: id });
+
+  } catch (err) {
+      await dbRun('ROLLBACK');
+      console.error("Erro ao atualizar desafio:", err);
+      res.status(500).json({ error: "Falha ao atualizar o desafio no banco de dados." });
+  }
 };
 
 export const deleteChallengeController = async (req, res) => {
-    // Implementação do CRUD de desafios
-    res.status(501).json({ message: "Não implementado" });
+  const { id } = req.params;
+  try {
+    const result = await new Promise((resolve, reject) => {
+        db.run("DELETE FROM desafios WHERE id = ?", [id], function(err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Desafio não encontrado." });
+    }
+    res.status(200).json({ message: "Desafio deletado com sucesso." });
+  } catch (error) {
+    console.error("Erro ao deletar desafio:", error);
+    res.status(500).json({ error: "Erro interno do servidor ao deletar desafio." });
+  }
 };
 
 export const getAllChallengesForDebug = async (req, res) => {
-    // Implementação do CRUD de desafios
-    res.status(501).json({ message: "Não implementado" });
+    try {
+        const todosOsDesafios = await dbAll("SELECT * FROM desafios");
+        res.status(200).json(todosOsDesafios);
+    } catch (err) {
+        console.error("Erro ao buscar desafios para debug:", err)
+        res.status(500).json({ error: "Erro ao buscar desafios para debug." });
+    }
 };
 
 export const importQuestionsController = async (req, res) => {

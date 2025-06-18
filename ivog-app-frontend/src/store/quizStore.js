@@ -9,6 +9,9 @@ const initialState = {
   selectedAnswer: null,
   loading: true, 
   error: '',
+  simuladoId: null, // O ID do simulado começa como nulo
+  isTraining: false,
+  desafioContext: null,
 };
 
 export const useQuizStore = create((set, get) => ({
@@ -16,7 +19,12 @@ export const useQuizStore = create((set, get) => ({
 
   startQuiz: async (params, navigate) => {
     useFeedbackStore.getState().showLoading();
-    set({ ...initialState, loading: true }); 
+    set({ 
+        ...initialState, 
+        loading: true, 
+        isTraining: params.is_training === 'true', 
+        desafioContext: params.desafio_id ? `desafio_id:${params.desafio_id}` : null
+    }); 
     
     try {
       const response = await api.get('/quiz/start', { params });
@@ -25,8 +33,6 @@ export const useQuizStore = create((set, get) => ({
         throw new Error('Nenhuma pergunta disponível para este quiz.');
       }
 
-      // --- CORREÇÃO APLICADA ---
-      // Lógica de transformação removida. Salva os dados brutos da API.
       set({ quizData: response.data, loading: false });
 
     } catch (err) {
@@ -49,16 +55,29 @@ export const useQuizStore = create((set, get) => ({
     }
 
     try {
-      await api.post('/quiz/answer', {
-        simulado_id: get().quizData.simulado_id,
+      // Pega o ID do simulado e o contexto do estado atual
+      const { simuladoId, isTraining, desafioContext } = get();
+
+      const payload = {
+        simulado_id: simuladoId, // Será nulo na primeira chamada
         telegram_id: window.Telegram.WebApp.initDataUnsafe.user.id,
-        pergunta: currentQuestion.pergunta_formatada_display, // Usa o campo original
-        resposta_usuario: selectedOption, // Envia 'A', 'B', etc.
+        pergunta: currentQuestion.pergunta_formatada_display,
+        resposta_usuario: selectedOption,
         resposta_correta: currentQuestion.correta,
         acertou: correct,
         tema: currentQuestion.tema,
         subtema: currentQuestion.subtema,
-      });
+        // Envia o contexto para o backend criar o simulado, se necessário
+        is_training: isTraining,
+        contexto_desafio: desafioContext,
+      };
+      
+      const response = await api.post('/quiz/answer', payload);
+      
+      // Se o backend criou um novo ID de simulado, o armazena no estado
+      if (response.data.newSimuladoId) {
+        set({ simuladoId: response.data.newSimuladoId });
+      }
     } catch (error) {
       console.error("Erro ao salvar resposta:", error);
     }
@@ -81,11 +100,27 @@ export const useQuizStore = create((set, get) => ({
     useFeedbackStore.getState().showLoading();
     set({ loading: true });
     try {
+      // Pega o ID do simulado do estado da store
+      const { simuladoId, score, quizData } = get();
+
+      // Verifica se um simuladoId foi criado (se pelo menos uma resposta foi dada)
+      if (!simuladoId && !get().isTraining) {
+          console.warn("Nenhuma resposta dada, não há o que finalizar.");
+          navigate('/quiz/results', { state: { results: {
+              is_training: false,
+              pontuacao_base: 0, 
+              pontuacao_final_com_bonus: 0, 
+              num_acertos: 0, 
+              total_perguntas: quizData.questions.length
+          }}});
+          return;
+      }
+
       const response = await api.post('/quiz/finish', {
         telegram_id: window.Telegram.WebApp.initDataUnsafe.user.id,
-        simulado_id: get().quizData.simulado_id,
-        num_acertos: get().score,
-        total_perguntas: get().quizData.questions.length
+        simulado_id: simuladoId,
+        num_acertos: score,
+        total_perguntas: quizData.questions.length
       });
       navigate('/quiz/results', { state: { results: response.data } });
     } catch (err) {
