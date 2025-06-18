@@ -27,6 +27,7 @@ function PerformanceItem({ icon, title, value, total, percentage }) {
 
 function StatsPage() {
   const [statsData, setStatsData] = useState(null);
+  const [challengeDetails, setChallengeDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tgUser, setTgUser] = useState(null);
@@ -36,13 +37,14 @@ function StatsPage() {
     const fetchAllData = async (telegramId) => {
       try {
         setLoading(true);
-        // A rota da API para user foi ajustada para o padrão que implementamos anteriormente
-        const [statsResponse, userProfileResponse] = await Promise.all([
+        const [statsResponse, userProfileResponse, challengeDetailsResponse] = await Promise.all([
           api.get('/stats/my_stats', { params: { telegram_id: telegramId } }),
-          api.get(`/user/user/${telegramId}`)
+          api.get(`/user/${telegramId}`),
+          api.get('/stats/my_challenges_participated_details', { params: { telegram_id: telegramId } })
         ]);
         setStatsData(statsResponse.data);
         setTgUser(userProfileResponse.data);
+        setChallengeDetails(challengeDetailsResponse.data);
       } catch (err) {
         console.error("Falha ao buscar dados para a página de estatísticas:", err);
         if (err.response) {
@@ -102,8 +104,17 @@ function StatsPage() {
                 }
             </div>
             <div className={`${styles.tabContent} ${activeTab === 'desafios' ? styles.active : ''}`}>
-                 {statsData.desafios_participados && statsData.desafios_participados.length > 0
-                    ? statsData.desafios_participados.map(d => <PerformanceItem key={d} icon={<DesafioIcon />} title={d.replace(/.*:/,'').replace(/_/g, ' ')} value="N/A" total="N/A" percentage={0} />)
+                 {challengeDetails.length > 0
+                    ? challengeDetails.map(d => (
+                        <PerformanceItem 
+                            key={d.contexto_desafio} 
+                            icon={<DesafioIcon />} 
+                            title={d.titulo_desafio} 
+                            value={d.total_acertos_brutos_no_desafio} 
+                            total={d.total_perguntas_no_desafio} 
+                            percentage={parseFloat(d.percentual_acerto_bruto_formatado).toFixed(0)} 
+                        />
+                      ))
                     : <p className={styles.noDataMessage}>Você ainda não participou de desafios.</p>
                  }
             </div>

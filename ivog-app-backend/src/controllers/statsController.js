@@ -40,7 +40,6 @@ export const getMyStatsController = async (req, res) => {
       [telegram_id]
     );
 
-    // --- CONSULTA CORRIGIDA ---
     const desafiosParticipadosPromise = dbAll(
       `SELECT contexto_desafio FROM simulados
        WHERE telegram_id = ? AND contexto_desafio IS NOT NULL AND contexto_desafio != ''
@@ -118,7 +117,12 @@ export const getMyChallengeDetailsController = async (req, res) => {
 
         const challengeDetailsPromises = desafios.map(async (desafio) => {
             const contexto = desafio.contexto_desafio;
+            // Extrai o ID do desafio a partir do contexto
+            const challengeId = contexto.split(':')[1];
 
+            // Busca o título correto na tabela 'desafios'
+            const titlePromise = dbGet("SELECT titulo FROM desafios WHERE id = ?", [challengeId]);
+            
             const statsPromise = dbGet(
                 `SELECT COUNT(*) as tr, SUM(acertou) as ta_bruto FROM respostas_simulado
                  WHERE telegram_id = ? AND id_simulado IN (SELECT id_simulado FROM simulados WHERE contexto_desafio = ?)`,
@@ -132,7 +136,8 @@ export const getMyChallengeDetailsController = async (req, res) => {
                 [contexto]
             );
 
-            const [stats, allRanks] = await Promise.all([statsPromise, rankPromise]);
+            // Executa as buscas em paralelo
+            const [desafioInfo, stats, allRanks] = await Promise.all([titlePromise, statsPromise, rankPromise]);
 
             let userRank = "N/A", userMaxPoints = 0;
             const rankIndex = allRanks.findIndex(rank => rank.telegram_id == telegram_id);
@@ -145,8 +150,10 @@ export const getMyChallengeDetailsController = async (req, res) => {
             const totalRespostas = stats.tr || 0;
             const percentualAcerto = totalRespostas > 0 ? (totalAcertos / totalRespostas * 100) : 0;
             
+            // Retorna o objeto com o título correto
             return {
                 contexto_desafio: contexto,
+                titulo_desafio: desafioInfo ? desafioInfo.titulo : contexto.replace(/.*:/,'').replace(/_/g, ' '),
                 total_perguntas_no_desafio: totalRespostas,
                 total_acertos_brutos_no_desafio: totalAcertos,
                 percentual_acerto_bruto_formatado: percentualAcerto.toFixed(2),
