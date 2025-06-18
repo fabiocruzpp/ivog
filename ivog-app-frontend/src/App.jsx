@@ -59,13 +59,21 @@ const PageLayout = () => {
 
 function AppLogic() {
   const navigate = useNavigate();
-  const { fetchUser } = useUserStore();
+  const { fetchUser, isNewUser, loading } = useUserStore();
   const { fetchConfigs } = useConfigStore();
 
   useEffect(() => {
-    fetchUser(navigate);
+    fetchUser();
     fetchConfigs();
-  }, [fetchUser, navigate, fetchConfigs]);
+  }, [fetchUser, fetchConfigs]);
+
+  useEffect(() => {
+    // Após a conclusão do carregamento, verifica se é um novo usuário
+    if (!loading && isNewUser) {
+      // Redireciona para a página de registro
+      navigate('/register', { replace: true });
+    }
+  }, [loading, isNewUser, navigate]);
   
   return null;
 }

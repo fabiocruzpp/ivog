@@ -19,13 +19,20 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 const initializeDb = () => {
-    // ✅ NOVA FUNÇÃO PARA ADICIONAR COLUNAS AUSENTES
     const addMissingColumns = () => {
         db.run("ALTER TABLE simulados ADD COLUMN is_training BOOLEAN DEFAULT FALSE", (err) => {
             if (err && !err.message.includes('duplicate column name')) {
                 console.error("Erro ao adicionar coluna 'is_training':", err.message);
             } else if (!err) {
                 console.log("Coluna 'is_training' adicionada com sucesso à tabela simulados");
+            }
+        });
+        // ✅ ADICIONA A COLUNA 'matricula'
+        db.run("ALTER TABLE usuarios ADD COLUMN matricula TEXT", (err) => {
+             if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao adicionar coluna 'matricula':", err.message);
+            } else if (!err) {
+                console.log("Coluna 'matricula' adicionada com sucesso à tabela usuarios");
             }
         });
     };
@@ -69,8 +76,8 @@ const initializeDb = () => {
 
     db.serialize(() => {
         db.run('PRAGMA foreign_keys = ON');
-        
-        // Todas as suas tabelas existentes...
+
+        // Tabela de usuários com a nova coluna 'matricula'
         db.run(`CREATE TABLE IF NOT EXISTS usuarios (
             telegram_id TEXT PRIMARY KEY,
             first_name TEXT,
@@ -82,14 +89,16 @@ const initializeDb = () => {
             cargo TEXT,
             data_cadastro TEXT,
             photo_url TEXT,
-            is_admin BOOLEAN DEFAULT FALSE
+            is_admin BOOLEAN DEFAULT FALSE,
+            matricula TEXT -- ✅ NOVA COLUNA
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'usuarios':", err.message); });
 
-        db.run("ALTER TABLE usuarios ADD COLUMN is_admin BOOLEAN DEFAULT FALSE", (err) => {
-            if (err && !err.message.includes('duplicate column name')) {
-                console.error("Erro ao adicionar coluna 'is_admin':", err.message);
-            }
-        });
+        // A verificação de coluna is_admin pode ser removida se a tabela já foi criada com ela acima
+        // db.run("ALTER TABLE usuarios ADD COLUMN is_admin BOOLEAN DEFAULT FALSE", (err) => {
+        //     if (err && !err.message.includes('duplicate column name')) {
+        //         console.error("Erro ao adicionar coluna 'is_admin':", err.message);
+        //     }
+        // });
 
         db.run(`CREATE TABLE IF NOT EXISTS admin_credentials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,7 +115,6 @@ const initializeDb = () => {
             is_training BOOLEAN DEFAULT FALSE
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'simulados':", err.message); });
 
-        // ... resto das suas tabelas ...
         db.run(`CREATE TABLE IF NOT EXISTS respostas_simulado (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_simulado INTEGER,
@@ -186,12 +194,10 @@ const initializeDb = () => {
         db.run("CREATE INDEX IF NOT EXISTS idx_respostas_telegram ON respostas_simulado (telegram_id);");
         db.run("CREATE INDEX IF NOT EXISTS idx_simulados_telegram ON simulados (telegram_id);");
         db.run("CREATE INDEX IF NOT EXISTS idx_resultados_telegram ON resultados (telegram_id);");
-        
+
         console.log("Verificação de tabelas e índices concluída.");
-        
-        // ✅ ADICIONE ESTA LINHA
-        addMissingColumns();
-        
+
+        addMissingColumns(); // ✅ Chama a função para adicionar colunas ausentes
         seedInitialConfigs();
         seedSuperAdmin();
     });

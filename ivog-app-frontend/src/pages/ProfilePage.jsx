@@ -20,10 +20,10 @@ const FormSelect = ({ label, name, value, onChange, options, disabled = false, d
         </select>
     </div>
 );
-const FormInput = ({ label, name, value, onChange, disabled = false, placeholder = '' }) => (
+const FormInput = ({ label, name, value, onChange, disabled = false, placeholder = '', type = 'text', pattern = null }) => (
     <div className={styles.formGroup}>
         <label htmlFor={name}>{label}</label>
-        <input type="text" id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} />
+        <input type={type} pattern={pattern} id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} />
     </div>
 );
 
@@ -31,12 +31,11 @@ const FormInput = ({ label, name, value, onChange, disabled = false, placeholder
 function ProfilePage() {
     const [telegramId, setTelegramId] = useState(null);
     const [loading, setLoading] = useState(true);
-    // Remove o estado de mensagem local: const [message, setMessage] = useState('');
     const { addToast } = useFeedbackStore(); // Usa a ação do store
 
     const [formData, setFormData] = useState({
         first_name: '', ddd: '', canal_principal: '', tipo_parceiro: '',
-        rede_parceiro: '', loja_revenda: '', cargo: ''
+        rede_parceiro: '', loja_revenda: '', cargo: '', matricula: ''
     });
     const [options, setOptions] = useState({
         ddds: [], canais: [], tiposParceiro: [], redes: [], lojas: [], cargos: []
@@ -45,11 +44,12 @@ function ProfilePage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         const resetMap = {
-            ddd: { canal_principal: '', tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '' },
-            canal_principal: { tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '' },
-            tipo_parceiro: { rede_parceiro: '', loja_revenda: '', cargo: '' },
-            rede_parceiro: { loja_revenda: '', cargo: '' },
-            loja_revenda: { cargo: '' }
+            ddd: { canal_principal: '', tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            canal_principal: { tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            tipo_parceiro: { rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            rede_parceiro: { loja_revenda: '', cargo: '', matricula: '' },
+            loja_revenda: { cargo: '', matricula: '' },
+            cargo: { matricula: '' }
         };
         setFormData(prev => ({ ...prev, ...(resetMap[name] || {}), [name]: value }));
     };
@@ -66,7 +66,7 @@ function ProfilePage() {
                     setLoading(true);
                     const [dddsRes, profileRes] = await Promise.all([
                         api.get('/options/ddds'),
-                        api.get(`/user/${currentId}`).catch(() => ({ data: {} }))
+                        api.get(`/user/user/${currentId}`).catch(() => ({ data: {} }))
                     ]);
                     setOptions(prev => ({ ...prev, ddds: dddsRes.data }));
                     if(profileRes.data) {
@@ -137,7 +137,7 @@ function ProfilePage() {
         e.preventDefault();
         useFeedbackStore.getState().showLoading();
         try {
-            await api.post('/register', { ...formData, telegram_id: telegramId });
+            await api.post('/user/register', { ...formData, telegram_id: telegramId });
             addToast('Perfil gravado com sucesso!', 'success');
         } catch (error) {
             addToast('Erro ao gravar o perfil. Tente novamente.', 'error');
@@ -151,6 +151,7 @@ function ProfilePage() {
     const showRede = (formData.canal_principal === 'Distribuição' || formData.tipo_parceiro === 'Parceiro Lojas') && options.redes.length > 0;
     const showLoja = (formData.canal_principal === 'Loja Própria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
     const showCargo = options.cargos.length > 0;
+    const showMatricula = (formData.canal_principal === 'Loja Própria' && formData.cargo) || (formData.canal_principal === 'Parceiros' && formData.tipo_parceiro === 'Parceiro Lojas' && formData.cargo);
 
     return (
         <div className={styles.screenContainer}>
@@ -166,7 +167,8 @@ function ProfilePage() {
                     {showRede && <FormSelect label="Rede" name="rede_parceiro" value={formData.rede_parceiro} onChange={handleChange} options={options.redes} defaultOptionText="Selecione a Rede" />}
                     {showLoja && <FormSelect label="Loja" name="loja_revenda" value={formData.loja_revenda} onChange={handleChange} options={options.lojas} defaultOptionText="Selecione a Loja" />}
                     {showCargo && <FormSelect label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} options={options.cargos} defaultOptionText="Selecione o Cargo" />}
-                    
+                    {showMatricula && <FormInput label="Matrícula/RE" name="matricula" value={formData.matricula} onChange={handleChange} type="tel" pattern="\d*" placeholder="Digite apenas números" />}
+
                     <button type="submit" className={styles.submitButton}>Gravar Alterações</button>
                     {/* O feedback agora é global e não precisa mais ser renderizado aqui */}
                 </form>

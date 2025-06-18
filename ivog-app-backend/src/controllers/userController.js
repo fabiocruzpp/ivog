@@ -34,25 +34,10 @@ export const getUserProfileController = async (req, res) => {
       console.log('[USER PROFILE CONTROLLER] Retornando usuário real:', userFormatted);
       res.status(200).json(userFormatted);
     } else {
-      console.log('[USER PROFILE CONTROLLER] Usuário não encontrado, criando perfil temporário');
-      
-      const tempUser = {
-        id: parseInt(telegramUserId),
-        name: 'Usuário Telegram',
-        email: `user${telegramUserId}@ivog.com`,
-        role: 'user',
-        avatar: null,
-        telegram_id: parseInt(telegramUserId),
-        first_name: 'Usuário',
-        ddd: '91',
-        canal_principal: 'Loja Própria',
-        cargo: 'GG',
-        loja_revenda: 'Loja Padrão',
-        created_at: new Date().toISOString()
-      };
-      
-      console.log('[USER PROFILE CONTROLLER] Retornando perfil temporário:', tempUser);
-      res.status(200).json(tempUser);
+      // CORREÇÃO: Se o usuário não for encontrado, retorna 404.
+      // O frontend (userStore) tratará esse status para redirecionar ao registro.
+      console.log('[USER PROFILE CONTROLLER] Usuário não encontrado, retornando 404');
+      res.status(404).json({ error: 'Usuário não encontrado' });
     }
     
   } catch (error) {
@@ -96,7 +81,7 @@ export const registerOrUpdateUser = async (req, res) => {
   try {
     console.log('[REGISTER USER] Requisição recebida:', req.body);
     
-    const { telegram_id, first_name, username, ddd, canal_principal, cargo, loja_revenda } = req.body;
+    const { telegram_id, first_name, ddd, canal_principal, cargo, loja_revenda, matricula } = req.body;
     
     if (!telegram_id || !first_name) {
       return res.status(400).json({ error: 'telegram_id e first_name são obrigatórios' });
@@ -109,29 +94,29 @@ export const registerOrUpdateUser = async (req, res) => {
       // Atualizar usuário existente
       const updateSql = `
         UPDATE usuarios 
-        SET first_name = ?, username = ?, ddd = ?, canal_principal = ?, cargo = ?, loja_revenda = ?
+        SET first_name = ?, ddd = ?, canal_principal = ?, cargo = ?, loja_revenda = ?, matricula = ?
         WHERE telegram_id = ?
       `;
       
-      await dbRun(updateSql, [first_name, username, ddd, canal_principal, cargo, loja_revenda, telegram_id]);
+      await dbRun(updateSql, [first_name, ddd, canal_principal, cargo, loja_revenda, matricula, telegram_id]);
       
       console.log('[REGISTER USER] Usuário atualizado:', telegram_id);
       res.status(200).json({ message: 'Usuário atualizado com sucesso', user: { telegram_id, first_name } });
     } else {
       // Criar novo usuário
       const insertSql = `
-        INSERT INTO usuarios (telegram_id, first_name, username, ddd, canal_principal, cargo, loja_revenda, created_at)
+        INSERT INTO usuarios (telegram_id, first_name, ddd, canal_principal, cargo, loja_revenda, matricula, data_cadastro)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       await dbRun(insertSql, [
         telegram_id, 
         first_name, 
-        username, 
         ddd || '91', 
         canal_principal || 'Loja Própria', 
         cargo || 'GG', 
         loja_revenda || 'Loja Padrão',
+        matricula || null,
         new Date().toISOString()
       ]);
       

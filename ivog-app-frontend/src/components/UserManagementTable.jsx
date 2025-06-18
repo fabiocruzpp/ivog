@@ -25,10 +25,25 @@ function UserManagementTable() {
             });
     }, []);
 
+    // Função de exclusão ajustada para usar o nome na confirmação
+    const handleDeleteUser = async (userId, userName) => {
+        if (window.confirm(`Tem certeza de que deseja excluir o usuário "${userName}" (ID: ${userId})? Esta ação não pode ser desfeita.`)) {
+            try {
+                await api.delete(`/admin/users/${userId}`);
+                setUsers(currentUsers => currentUsers.filter(user => user.telegram_id !== userId));
+                alert('Usuário excluído com sucesso!');
+            } catch (error) {
+                console.error("Erro ao excluir usuário:", error);
+                alert('Falha ao excluir o usuário.');
+            }
+        }
+    };
+
     const sortedAndFilteredUsers = useMemo(() => {
         let filtered = users.filter(user =>
             (user.first_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (user.telegram_id?.toString() || '').includes(searchTerm) ||
+            (user.ddd?.toString() || '').includes(searchTerm) || // Adicionado filtro por DDD
             (user.cargo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (user.canal_principal?.toLowerCase() || '').includes(searchTerm.toLowerCase())
         );
@@ -85,7 +100,7 @@ function UserManagementTable() {
                     <span className={styles.searchIcon}><SearchIcon /></span>
                     <input
                         type="text"
-                        placeholder="Buscar por nome, ID, cargo..."
+                        placeholder="Buscar por nome, ID, DDD..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -98,26 +113,33 @@ function UserManagementTable() {
                 <table className={styles.userTable}>
                     <thead>
                         <tr>
+                            {/* Cabeçalho restaurado para a estrutura original */}
                             <SortableHeader name="telegram_id">ID Telegram</SortableHeader>
                             <SortableHeader name="first_name">Nome</SortableHeader>
-                            <SortableHeader name="cargo">Cargo</SortableHeader>
+                            <SortableHeader name="ddd">DDD</SortableHeader>
                             <SortableHeader name="canal_principal">Canal</SortableHeader>
-                            <SortableHeader name="data_cadastro">Data Cadastro</SortableHeader>
+                            <SortableHeader name="cargo">Cargo</SortableHeader>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sortedAndFilteredUsers.map(user => (
                             <tr key={user.telegram_id}>
+                                {/* Células restauradas para a estrutura original */}
                                 <td data-label="ID Telegram">{user.telegram_id}</td>
                                 <td data-label="Nome">{user.first_name}</td>
-                                <td data-label="Cargo">{user.cargo || 'N/A'}</td>
+                                <td data-label="DDD">{user.ddd || 'N/A'}</td>
                                 <td data-label="Canal">{user.canal_principal || 'N/A'}</td>
-                                <td data-label="Data Cadastro">{user.data_cadastro ? new Date(user.data_cadastro).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                                <td data-label="Cargo">{user.cargo || 'N/A'}</td>
                                 <td data-label="Ações">
                                     <div className={styles.actionButtons}>
                                         <button className={`${styles.actionButton} ${styles.editButton}`}>Editar</button>
-                                        <button className={`${styles.actionButton} ${styles.deleteButton}`}>Excluir</button>
+                                        <button
+                                            onClick={() => handleDeleteUser(user.telegram_id, user.first_name)}
+                                            className={`${styles.actionButton} ${styles.deleteButton}`}
+                                        >
+                                            Excluir
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

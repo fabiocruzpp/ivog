@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import api from '/src/services/api.js';
 import { useNavigate } from 'react-router-dom';
 import styles from '/src/pages/RegisterPage.module.css';
+import { useUserStore } from '/src/store/userStore.js';
 
 // Componentes auxiliares do formulário (sem alterações)
 const FormSelect = ({ label, name, value, onChange, options, disabled = false, defaultOptionText }) => (
@@ -15,22 +16,23 @@ const FormSelect = ({ label, name, value, onChange, options, disabled = false, d
         </select>
     </div>
 );
-const FormInput = ({ label, name, value, onChange, disabled = false, placeholder = '' }) => (
+const FormInput = ({ label, name, value, onChange, disabled = false, placeholder = '', type = 'text', pattern = null }) => (
     <div className={styles.formGroup}>
         <label htmlFor={name}>{label}</label>
-        <input type="text" id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} required />
+        <input type={type} pattern={pattern} id={name} name={name} value={value || ''} onChange={onChange} disabled={disabled} className={styles.formInput} placeholder={placeholder} required />
     </div>
 );
 
 function RegisterPage() {
     const navigate = useNavigate();
+    const { fetchUser } = useUserStore();
     const [telegramId, setTelegramId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
 
     const [formData, setFormData] = useState({
         first_name: '', ddd: '', canal_principal: '', tipo_parceiro: '',
-        rede_parceiro: '', loja_revenda: '', cargo: ''
+        rede_parceiro: '', loja_revenda: '', cargo: '', matricula: ''
     });
     const [options, setOptions] = useState({
         ddds: [], canais: [], tiposParceiro: [], redes: [], lojas: [], cargos: []
@@ -39,11 +41,12 @@ function RegisterPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         const resetMap = {
-            ddd: { canal_principal: '', tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '' },
-            canal_principal: { tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '' },
-            tipo_parceiro: { rede_parceiro: '', loja_revenda: '', cargo: '' },
-            rede_parceiro: { loja_revenda: '', cargo: '' },
-            loja_revenda: { cargo: '' }
+            ddd: { canal_principal: '', tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            canal_principal: { tipo_parceiro: '', rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            tipo_parceiro: { rede_parceiro: '', loja_revenda: '', cargo: '', matricula: '' },
+            rede_parceiro: { loja_revenda: '', cargo: '', matricula: '' },
+            loja_revenda: { cargo: '', matricula: '' },
+            cargo: { matricula: ''}
         };
         setFormData(prev => ({ ...prev, ...(resetMap[name] || {}), [name]: value }));
     };
@@ -129,8 +132,13 @@ function RegisterPage() {
         e.preventDefault();
         setMessage('A finalizar cadastro...');
         try {
-            await api.post('/register', { ...formData, telegram_id: telegramId });
-            setMessage('Cadastro realizado com sucesso!');
+            await api.post('/user/register', { ...formData, telegram_id: telegramId });
+            setMessage('Cadastro realizado com sucesso! A redirecionar...');
+            
+            // Força a atualização do estado do usuário.
+            // Isso garantirá que `isNewUser` seja `false` antes de navegar.
+            await fetchUser();
+            
             navigate('/');
         } catch (error) {
             setMessage('Erro ao finalizar o cadastro. Tente novamente.');
@@ -143,6 +151,7 @@ function RegisterPage() {
     const showRede = (formData.canal_principal === 'Distribuição' || formData.tipo_parceiro === 'Parceiro Lojas') && options.redes.length > 0;
     const showLoja = (formData.canal_principal === 'Loja Própria' || (formData.tipo_parceiro === 'Parceiro Lojas' && formData.rede_parceiro)) && options.lojas.length > 0;
     const showCargo = options.cargos.length > 0;
+    const showMatricula = (formData.canal_principal === 'Loja Própria' && formData.cargo) || (formData.canal_principal === 'Parceiros' && formData.tipo_parceiro === 'Parceiro Lojas' && formData.cargo);
 
     return (
         <div className={styles.screenContainer}>
@@ -159,7 +168,8 @@ function RegisterPage() {
                     {showRede && <FormSelect label="Rede" name="rede_parceiro" value={formData.rede_parceiro} onChange={handleChange} options={options.redes} defaultOptionText="Selecione a Rede" />}
                     {showLoja && <FormSelect label="Loja" name="loja_revenda" value={formData.loja_revenda} onChange={handleChange} options={options.lojas} defaultOptionText="Selecione a Loja" />}
                     {showCargo && <FormSelect label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} options={options.cargos} defaultOptionText="Selecione o Cargo" />}
-                    
+                    {showMatricula && <FormInput label="Matrícula/RE" name="matricula" value={formData.matricula} onChange={handleChange} type="tel" pattern="\d*" placeholder="Digite apenas números" />}
+
                     <button type="submit" className={styles.submitButton}>Concluir Cadastro</button>
                     {message && <p className={styles.messageFeedback}>{message}</p>}
                 </form>
