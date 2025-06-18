@@ -114,7 +114,7 @@ function QuestionManagerPage() {
         if (!file) return;
 
         const formData = new FormData();
-        formData.append('csvfile', file);
+        formData.append('file', file);
         
         const url = telegramId 
             ? `/admin/import-questions?telegram_id=${telegramId}` 
@@ -225,9 +225,9 @@ function QuestionManagerPage() {
                 <div className={styles.toolbar}>
                     <div>
                         <button onClick={handleOpenCreateModal} className={styles.primaryButton}>Criar Nova Pergunta</button>
-                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".csv" style={{ display: 'none' }} />
+                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".xlsx" style={{ display: 'none' }} />
                         <button onClick={handleImportClick} className={styles.secondaryButton} disabled={importing}>
-                            {importing ? 'Importando...' : 'Importar CSV'}
+                            {importing ? 'Importando...' : 'Importar XLSX'}
                         </button>
                     </div>
                     <div>

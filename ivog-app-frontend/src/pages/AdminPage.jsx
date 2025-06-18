@@ -457,53 +457,50 @@ function KnowledgePillsManagement() {
         fetchPills();
     }, [fetchPills]);
 
-    const handleImportCsv = async () => {
-    if (!csvFile) return addToast('Por favor, selecione um arquivo CSV.', 'error');
-
-    if (!csvFile.name.toLowerCase().endsWith('.csv')) {
-        addToast('Por favor, selecione um arquivo CSV válido.', 'error');
-        return;
+    const handleImportCsv = async () => { // Ou como sua função estiver definida
+    console.log('Botão Importar XLSX clicado. Iniciando processo...');
+    // ... restante da sua lógica de importação
+    if (!csvFile) { // Verifique se o arquivo está no estado
+        console.log('Estado csvFile está vazio.');
+        return; // Sai se não houver arquivo
     }
+    console.log('Arquivo no estado:', csvFile);
 
-    if (csvFile.size > 10 * 1024 * 1024) { // 10MB limit
-        addToast('Arquivo muito grande. Máximo 10MB permitido.', 'error');
-        return;
-    }
+    const formData = new FormData();
+    // Verifique o nome do campo que o backend espera (geralmente 'file' ou 'upload')
+    // No seu backend, a configuração do multer na rota deve especificar isso, ex: router.post('/import-csv', upload.single('nomeDoCampo'), importController);
+    const fieldName = 'file'; // <-- Substitua 'file' pelo nome correto esperado pelo multer
+    formData.append(fieldName, csvFile);
+    console.log('FormData criado com o arquivo:', fieldName);
 
-    showLoading();
     try {
-        const csvContent = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(e);
-            reader.readAsText(csvFile, 'UTF-8');
-        });
-
-        console.log('📄 Conteúdo CSV lido:', csvContent.substring(0, 200) + '...');
-
-        const response = await api.post('/admin/pills/import-csv', {
-            csvContent: csvContent,
-            fileName: csvFile.name
-        }, {
+        // Verifique a URL correta
+        const response = await api.post('/admin/knowledge-pills/import-csv', formData, {
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'multipart/form-data' // Importante para FormData
             }
         });
-
-        console.log('✅ Resposta do servidor:', response.data);
-        addToast(response.data.message, 'success');
-        fetchPills();
-        setCsvFile(null);
-        if (csvInputRef.current) csvInputRef.current.value = null;
-
-    } catch (err) {
-        console.error('❌ Erro ao importar CSV:', err);
-        const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Erro ao importar CSV.';
-        addToast(errorMessage, 'error');
-    } finally {
-        hideLoading();
+        console.log('Resposta da API:', response.data);
+        addToast('Importação iniciada!', 'info'); // Feedback inicial
+        // ... lógica para lidar com a resposta de sucesso (exibir resultados, erros)
+        if (response.data.errors && response.data.errors.length > 0) {
+             addToast(`Importação concluída com erros: ${response.data.errors.length} erros.`, 'warning');
+             // Talvez exibir os erros na tela
+        } else {
+             addToast(response.data.message || 'Importação concluída com sucesso!', 'success');
+        }
+         fetchPills(); // Atualiza a lista após importação
+    } catch (error) {
+        console.error('Erro na importação:', error);
+        // Exibe um toast com a mensagem de erro do backend, se disponível
+        addToast(error.response?.data?.error || 'Erro ao importar arquivo.', 'error');
+        // Loga detalhes do erro para depuração
+        console.error('Detalhes do erro:', error.response?.data || error.message);
     }
-};
+    };
+
+
+
 
 
     const handleSendNow = async () => {
@@ -820,10 +817,10 @@ function KnowledgePillsManagement() {
                             <div className={styles.stepContent}>
                                 <h4>Importar CSV</h4>
                                 <div className={styles.fileUpload}>
-                                    <input 
-                                        type="file" 
-                                        accept=".csv" 
-                                        ref={csvInputRef} 
+                                    <input
+                                        type="file"
+                                        accept=".xlsx" // Alterado de .csv para .xlsx
+                                        ref={csvInputRef}
                                         onChange={(e) => setCsvFile(e.target.files[0])}
                                         className={styles.fileInput}
                                     />
@@ -838,7 +835,7 @@ function KnowledgePillsManagement() {
                                         className={styles.uploadButton} 
                                         disabled={!csvFile}
                                     >
-                                        📤 Importar CSV
+                                        📤 Importar XLSX
                                     </button>
                                 </div>
                                 <div className={styles.csvHelp}>
