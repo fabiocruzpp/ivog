@@ -6,13 +6,29 @@
   height: 60px;
   background-color: var(--primary-dark-purple);
   color: var(--secondary-white);
-  display: grid; /* Usando grid para um alinhamento mais fácil */
-  grid-template-columns: 1fr 2fr 1fr; /* Três colunas: esquerda, centro, direita */
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   padding: 0 15px;
   box-sizing: border-box;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 1000;
+  transition: background-color 0.4s ease;
+}
+
+/* Nova classe para o modo desafio com a cor solicitada */
+.challengeHeader {
+    background-color: rgb(253, 192, 7);
+    color: #1e293b; /* Cor de texto escura para melhor contraste */
+}
+
+.challengeHeader .backButton,
+.challengeHeader .rightSection {
+    color: #1e293b;
+}
+
+.challengeHeader .rightSection svg {
+    fill: #1e293b;
 }
 
 .leftSection, .rightSection {
@@ -33,6 +49,10 @@
 
 .centerSection {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden; /* Evita que o conteúdo vaze */
 }
 
 .pageTitle {
@@ -42,6 +62,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* Novo estilo para o subtítulo */
+.challengeSubtitle {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
 .backButton {

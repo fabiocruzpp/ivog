@@ -1,145 +1,144 @@
 .screenContainer {
-    width: 100%;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    background-color: var(--primary-background);
+    height: 100vh;
+    background-color: var(--neutral-background);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease;
 }
 
 .header {
     background-color: var(--primary-dark-purple);
-    color: var(--secondary-white);
-    padding: 30px 20px 60px 20px; /* Aumenta o padding inferior */
-    width: 100%;
-    border-bottom-left-radius: 35px;
-    border-bottom-right-radius: 35px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
+    color: white;
+    padding: 30px 20px;
     text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 
 .header h2 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--secondary-white);
+    margin: 10px 0 5px 0;
+    font-size: 1.8rem;
 }
 
 .header p {
-    font-size: 15px;
-    color: var(--primary-light-purple);
     margin: 0;
+    font-size: 1rem;
     opacity: 0.9;
 }
 
+.trophyIcon {
+    margin-bottom: 10px;
+}
+.trophyIcon svg {
+    fill: #FFD700; /* Cor de ouro para o troféu */
+}
+
+
 .content {
-    background-color: var(--secondary-white);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
     padding: 20px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 450px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
     align-items: center;
-    margin-top: -40px; /* Efeito de sobreposição */
-    z-index: 10;
+    gap: 16px;
     flex-grow: 1;
 }
 
 .scoreSummary {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--primary-dark-black);
-    line-height: 1.6;
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
     width: 100%;
+    max-width: 400px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     text-align: center;
 }
 
 .scoreSummary p {
-    margin: 4px 0;
+    margin: 8px 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
 }
 
-.scoreSummary strong {
-    font-weight: 700;
-}
-
-.highlightScore strong {
-    color: var(--primary-dark-purple);
-    font-size: 18px;
+.highlightScore {
+    font-size: 1.5rem !important;
+    color: var(--text-primary) !important;
 }
 
 .finalScore {
+    font-size: 1.2rem;
     color: var(--primary-dark-purple);
-    font-size: 16px;
 }
 
 .divider {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 15px 0;
+    border: none;
+    height: 1px;
+    background-color: var(--neutral-border);
+    margin: 16px 0;
 }
 
 .topScoresSection {
-    background-color: var(--primary-background);
-    width: 100%;
-    padding: 15px;
-    border-radius: 8px;
     text-align: center;
-    box-sizing: border-box;
-    font-size: 13px;
-    color: var(--secondary-dark-grey);
-}
-
-.topScoresSection p {
-    margin: 0 0 10px 0;
-    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
 }
 
 .scoresList {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--primary-dark-purple);
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.scoreItem {
+    background-color: var(--neutral-light-gray);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .actionButton {
-    font-family: var(--font-family-poppins);
-    padding: 14px 20px;
-    border-radius: 28px;
-    border: none;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-    text-decoration: none;
-    width: 100%;
-    max-width: 300px;
-    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    width: 100%;
+    max-width: 400px;
+    padding: 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .statsButton {
-    background-color: var(--primary-dark-purple);
-    color: var(--secondary-white);
-}
-
-.statsButton:hover {
-    background-color: #5a28a0;
+    background-color: var(--secondary-white);
+    color: var(--primary-dark-purple);
+    border: 1px solid var(--neutral-border);
 }
 
 .homeButton {
-    background-color: transparent;
-    color: var(--secondary-dark-grey);
-    font-weight: 500;
-    margin-top: -5px;
+    background-color: var(--primary-purple);
+    color: white;
 }
 
-.homeButton:hover {
-    color: var(--primary-dark-black);
+/* --- ESTILOS PARA O MODO DESAFIO --- */
+
+.challengeResults .header {
+    background-color: #FD9F07; /* Laranja */
+    color: white;
+}
+
+.challengeResults .finalScore {
+    color: #FD9F07; /* Usa o mesmo laranja para o total */
+}
+
+.challengeResults .homeButton {
+    background-color: #e88f00; /* Um tom mais escuro de laranja para o botão */
 }

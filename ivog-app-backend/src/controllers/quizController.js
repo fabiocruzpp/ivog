@@ -6,7 +6,8 @@ const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// NOVO CONTROLLER (existente)
+// ... (as outras funções do controller permanecem iguais)
+
 export const getAvailableThemesController = async (req, res) => {
     try {
         const { telegram_id } = req.query;
@@ -115,14 +116,13 @@ export const saveAnswerController = async (req, res) => {
     let newSimuladoId = null;
 
     if (!simulado_id) {
-        // CORREÇÃO: Usando new Promise para garantir que o 'this' (com lastID) seja capturado.
         const result = await new Promise((resolve, reject) => {
             db.run(
                 "INSERT INTO simulados (telegram_id, data_inicio, is_training, contexto_desafio) VALUES (?, ?, ?, ?)",
                 [telegram_id, new Date().toISOString(), !!is_training, contexto_desafio || null],
                 function(err) {
                     if (err) return reject(err);
-                    resolve(this); // 'this' contém lastID e changes
+                    resolve(this);
                 }
             );
         });
@@ -150,18 +150,18 @@ export const finishQuizController = async (req, res) => {
     
     const { telegram_id, simulado_id, num_acertos, total_perguntas } = req.body;
     if ([telegram_id, simulado_id, num_acertos, total_perguntas].some(f => f === undefined)) {
-      console.log('[FINISH QUIZ CONTROLLER] Campos obrigatórios ausentes');
       return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
     }
 
-    const simulado = await dbGet("SELECT is_training FROM simulados WHERE id_simulado = ?", [simulado_id]);
-    console.log('[FINISH QUIZ CONTROLLER] Simulado encontrado:', simulado);
+    // CORREÇÃO: Busca também o contexto do desafio para saber se é um desafio
+    const simulado = await dbGet("SELECT is_training, contexto_desafio FROM simulados WHERE id_simulado = ?", [simulado_id]);
+    const isChallenge = !!simulado?.contexto_desafio;
 
     if (simulado && simulado.is_training) {
-      console.log('[FINISH QUIZ CONTROLLER] Modo treino - não salvando pontuação');
       return res.status(200).json({
         status: "success",
         is_training: true,
+        is_challenge: isChallenge,
         pontuacao_base: 0,
         pontuacao_final_com_bonus: 0,
         num_acertos,
@@ -182,11 +182,10 @@ export const finishQuizController = async (req, res) => {
     await dbRun(`INSERT INTO resultados (telegram_id, id_simulado, pontos, total_perguntas, data) VALUES (?, ?, ?, ?, ?)`,
         [telegram_id, simulado_id, pontos_finais_truncados, total_perguntas, new Date().toISOString()]);
     
-    console.log('[FINISH QUIZ CONTROLLER] Resultado salvo com sucesso');
-    
     res.status(200).json({ 
       status: "success", 
       is_training: false,
+      is_challenge: isChallenge, // Envia a flag para o frontend
       pontuacao_base, 
       pontuacao_final_com_bonus: pontos_finais_truncados, 
       num_acertos, 

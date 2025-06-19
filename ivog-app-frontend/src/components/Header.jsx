@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
+import { useQuizStore } from '../store/quizStore';
 import styles from './Header.module.css';
 
 const BackArrowIcon = () => (
@@ -15,7 +16,6 @@ const UserIcon = () => (
   </svg>
 );
 
-// Mapeamento de rotas para títulos
 const pageTitles = {
   '/quiz': 'Simulado',
   '/stats': 'Minhas Estatísticas',
@@ -30,14 +30,20 @@ const pageTitles = {
 
 function Header() {
   const { user } = useUserStore();
+  const { isChallengeActive, challengeTitle } = useQuizStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isHomePage = location.pathname === '/';
-  const pageTitle = pageTitles[location.pathname] || 'IvoG';
+  
+  const pageTitle = isChallengeActive 
+    ? '🔥 MODO DESAFIO 🔥' 
+    : (pageTitles[location.pathname] || 'IvoG');
+  
+  const headerClass = `${styles.header} ${isChallengeActive ? styles.challengeHeader : ''}`;
 
   return (
-    <header className={styles.header}>
+    <header className={headerClass}>
       <div className={styles.leftSection}>
         {!isHomePage && (
           <button onClick={() => navigate(-1)} className={styles.backButton}>
@@ -47,6 +53,9 @@ function Header() {
       </div>
       <div className={styles.centerSection}>
         <h1 className={styles.pageTitle}>{pageTitle}</h1>
+        {isChallengeActive && challengeTitle && (
+            <small className={styles.challengeSubtitle}>{challengeTitle}</small>
+        )}
       </div>
       <div className={styles.rightSection}>
         {user && (
