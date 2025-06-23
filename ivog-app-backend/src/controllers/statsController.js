@@ -1,265 +1,258 @@
 import db from '../database/database.js';
 import { promisify } from 'util';
 
-// Promisificamos os métodos do DB para usar async/await
 const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 
 export const getMyStatsController = async (req, res) => {
-  try {
-    // 1. Pega o telegram_id da query string
     const { telegram_id } = req.query;
+
     if (!telegram_id) {
-      return res.status(400).json({ error: 'telegram_id é obrigatório.' });
+        return res.status(400).json({ error: 'telegram_id é obrigatório.' });
     }
 
-    // 2. Prepara todas as consultas em paralelo
-    const totalSimuladosPromise = dbGet(
-      "SELECT COUNT(DISTINCT id_simulado) as count FROM simulados WHERE telegram_id = ?",
-      [telegram_id]
-    );
+    try {
+        const totalSimuladosPromise = dbGet(
+            "SELECT COUNT(DISTINCT id_simulado) as count FROM simulados WHERE telegram_id = ?",
+            [telegram_id]
+        );
 
-    const globalStatsPromise = dbGet(
-      "SELECT COUNT(*) as total_respostas, SUM(acertou) as total_acertos FROM respostas_simulado WHERE telegram_id = ?",
-      [telegram_id]
-    );
+        const globalStatsPromise = dbGet(
+            "SELECT COUNT(*) as total_respostas, SUM(acertou) as total_acertos FROM respostas_simulado WHERE telegram_id = ?",
+            [telegram_id]
+        );
 
-    const temaPerformancePromise = dbAll(
-      `SELECT tema as categoria_valor, SUM(acertou) as acertos_brutos, COUNT(*) as total_respostas
-       FROM respostas_simulado
-       WHERE telegram_id = ? AND tema IS NOT NULL AND tema != '' AND tema != 'Não especificado'
-       GROUP BY tema ORDER BY tema`,
-      [telegram_id]
-    );
+        const desempenhoSubtemasPromise = dbAll(
+            `SELECT subtema as categoria_valor, SUM(acertou) as acertos_brutos, COUNT(*) as total_respostas
+             FROM respostas_simulado
+             WHERE telegram_id = ? AND subtema IS NOT NULL AND subtema != '' AND subtema != 'Não especificado'
+             GROUP BY subtema ORDER BY subtema`,
+            [telegram_id]
+        );
 
-    const subtemaPerformancePromise = dbAll(
-      `SELECT subtema as categoria_valor, SUM(acertou) as acertos_brutos, COUNT(*) as total_respostas
-       FROM respostas_simulado
-       WHERE telegram_id = ? AND subtema IS NOT NULL AND subtema != '' AND subtema != 'Não especificado'
-       GROUP BY subtema ORDER BY subtema`,
-      [telegram_id]
-    );
+        // Executa todas as consultas em paralelo
+        const [
+            totalSimuladosResult,
+            globalStatsResult,
+            desempenhoSubtemasResult
+        ] = await Promise.all([
+            totalSimuladosPromise,
+            globalStatsPromise,
+            desempenhoSubtemasPromise
+        ]);
 
-    const desafiosParticipadosPromise = dbAll(
-      `SELECT contexto_desafio FROM simulados
-       WHERE telegram_id = ? AND contexto_desafio IS NOT NULL AND contexto_desafio != ''
-       GROUP BY contexto_desafio
-       ORDER BY MAX(data_inicio) DESC`,
-      [telegram_id]
-    );
+        const total_acertos_geral = globalStatsResult ? globalStatsResult.total_acertos || 0 : 0;
+        const total_respostas_geral = globalStatsResult ? globalStatsResult.total_respostas || 0 : 0;
+        const percentual_geral_acerto = total_respostas_geral > 0
+            ? ((total_acertos_geral / total_respostas_geral) * 100).toFixed(2)
+            : '0.00';
 
-    // 3. Executa todas as promises em paralelo
-    const [
-      totalSimuladosResult,
-      globalStatsResult,
-      desempenhoTemasResult,
-      desempenhoSubtemasResult,
-      desafiosParticipadosResult,
-    ] = await Promise.all([
-      totalSimuladosPromise,
-      globalStatsPromise,
-      temaPerformancePromise,
-      subtemaPerformancePromise,
-      desafiosParticipadosPromise,
-    ]);
+        const desempenhoSubtemasFormatado = desempenhoSubtemasResult.map(item => ({
+            subtema: item.categoria_valor,
+            acertos_brutos: item.acertos_brutos || 0,
+            total_respostas: item.total_respostas,
+            percentual_acerto_bruto: item.total_respostas > 0
+                ? ((item.acertos_brutos / item.total_respostas) * 100).toFixed(2)
+                : '0.00'
+        }));
 
-    // 4. Formata os resultados para a resposta final
-    const total_acertos = globalStatsResult.total_acertos || 0;
-    const total_respostas = globalStatsResult.total_respostas || 0;
-    const percentual_geral_acerto = total_respostas > 0 ? (total_acertos / total_respostas * 100) : 0;
+        res.status(200).json({
+            total_simulados_realizados: totalSimuladosResult ? totalSimuladosResult.count || 0 : 0,
+            total_respostas_geral: total_respostas_geral,
+            total_acertos_geral_bruto: total_acertos_geral,
+            percentual_acerto_geral_formatado: percentual_geral_acerto,
+            desempenho_subtemas: desempenhoSubtemasFormatado
+        });
 
-    const desempenho_temas_formatado = desempenhoTemasResult.map(item => ({
-      tema: item.categoria_valor,
-      acertos_brutos: item.acertos_brutos || 0,
-      total_respostas: item.total_respostas,
-      percentual_acerto_bruto: item.total_respostas > 0 ? parseFloat((item.acertos_brutos / item.total_respostas * 100).toFixed(2)) : 0,
-    }));
-    
-    const desempenho_subtemas_formatado = desempenhoSubtemasResult.map(item => ({
-          subtema: item.categoria_valor,
-          acertos_brutos: item.acertos_brutos || 0,
-          total_respostas: item.total_respostas,
-          percentual_acerto_bruto: item.total_respostas > 0 ? parseFloat((item.acertos_brutos / item.total_respostas * 100).toFixed(2)) : 0,
-    }));
-
-    // 5. Envia a resposta consolidada
-    res.status(200).json({
-      total_simulados_realizados: totalSimuladosResult.count || 0,
-      total_respostas_geral: total_respostas,
-      total_acertos_geral_bruto: total_acertos,
-      percentual_acerto_geral_formatado: percentual_geral_acerto.toFixed(2),
-      desempenho_temas: desempenho_temas_formatado,
-      desempenho_subtemas: desempenho_subtemas_formatado,
-      desafios_participados: desafiosParticipadosResult.map(d => d.contexto_desafio),
-    });
-
-  } catch (error) {
-    console.error("Erro ao buscar estatísticas do usuário:", error);
-    res.status(500).json({ error: "Erro interno do servidor ao buscar estatísticas." });
-  }
+    }
+    catch (error) {
+        console.error("Erro ao buscar estatísticas do usuário:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao buscar estatísticas." });
+    }
 };
 
+
+// Função getMyChallengeDetailsController com lógica de título corrigida
 export const getMyChallengeDetailsController = async (req, res) => {
+    const { telegram_id } = req.query;
+
+    if (!telegram_id) {
+        return res.status(400).json({ error: 'telegram_id é obrigatório.' });
+    }
+
+    try {
+        const challengeStats = await dbAll(
+            `SELECT
+                s.contexto_desafio,
+                d.titulo AS titulo_desafio,
+                COUNT(rs.id) as total_perguntas_no_desafio,
+                SUM(rs.acertou) as total_acertos_brutos_no_desafio
+             FROM simulados s
+             JOIN respostas_simulado rs ON s.id_simulado = rs.id_simulado
+             LEFT JOIN desafios d ON s.contexto_desafio = 'desafio_id:' || d.id -- <--- Ajustado aqui também para o JOIN
+             WHERE s.telegram_id = ? AND s.contexto_desafio IS NOT NULL AND s.contexto_desafio != ''
+             GROUP BY s.contexto_desafio, d.titulo
+             ORDER BY s.data_inicio DESC`,
+            [telegram_id]
+        );
+
+        const formattedChallengeStats = challengeStats.map(item => {
+            // Extrai o ID do contexto usando a regex CORRIGIDA
+            const contexto = item.contexto_desafio;
+            const challengeIdMatch = contexto ? contexto.match(/desafio_id:(\d+)/) : null; // <--- Regex CORRIGIDA
+            const challengeId = challengeIdMatch ? challengeIdMatch[1] : 'Desconhecido';
+
+            // Lógica de exibição do título:
+            // Usa item.titulo_desafio se existir e não for vazio após trim.
+            // Caso contrário, usa o formato "Desafio ID [ID]" com o ID extraído.
+            const tituloDisplay = (item.titulo_desafio && String(item.titulo_desafio).trim() !== '')
+                ? item.titulo_desafio // Usa o título do banco se existir e não for vazio
+                : `Desafio ID ${challengeId}`; // Fallback para "Desafio ID [ID]"
+
+            return {
+                contexto_desafio: item.contexto_desafio,
+                titulo_desafio: tituloDisplay, // Usa o título formatado
+                total_perguntas_no_desafio: item.total_perguntas_no_desafio,
+                total_acertos_brutos_no_desafio: item.total_acertos_brutos_no_desafio || 0,
+                percentual_acerto_bruto_formatado: item.total_perguntas_no_desafio > 0
+                    ? ((item.total_acertos_brutos_no_desafio / item.total_perguntas_no_desafio) * 100).toFixed(2)
+                    : '0.00'
+            };
+        });
+
+        res.status(200).json(formattedChallengeStats);
+
+    } catch (error) {
+        console.error("Erro ao buscar detalhes de desafios do usuário:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao buscar detalhes de desafios." });
+    }
+};
+
+export const getChallengeDetailsController = async (req, res) => {
+    const { challenge_id } = req.query;
+
+    if (!challenge_id) {
+        return res.status(400).json({ error: 'challenge_id é obrigatório.' });
+    }
+
+    try {
+        const challenge = await dbGet('SELECT * FROM desafios WHERE id = ?', [challenge_id]);
+        if (!challenge) {
+            return res.status(404).json({ error: 'Desafio não encontrado.' });
+        }
+
+        res.status(200).json(challenge);
+
+    } catch (error) {
+        console.error("Erro ao buscar detalhes do desafio:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao buscar detalhes do desafio." });
+    }
+};
+
+export const getMyTestsListController = async (req, res) => {
     try {
         const { telegram_id } = req.query;
         if (!telegram_id) {
             return res.status(400).json({ error: 'telegram_id é obrigatório.' });
         }
 
-        const desafios = await dbAll(
-            `SELECT DISTINCT contexto_desafio FROM simulados WHERE telegram_id = ? AND contexto_desafio IS NOT NULL AND contexto_desafio != '' ORDER BY data_inicio DESC`,
+        const testsList = await dbAll(
+            `SELECT
+                s.id_simulado,
+                s.data_inicio,
+                s.is_training,
+                s.contexto_desafio,
+                COUNT(rs.id) as total_perguntas,
+                SUM(rs.acertou) as total_acertos
+             FROM simulados s
+             JOIN respostas_simulado rs ON s.id_simulado = rs.id_simulado
+             WHERE s.telegram_id = ?
+             GROUP BY s.id_simulado, s.data_inicio, s.is_training, s.contexto_desafio
+             ORDER BY s.data_inicio DESC`,
             [telegram_id]
         );
 
-        if (desafios.length === 0) {
-            return res.json([]);
-        }
-
-        const challengeDetailsPromises = desafios.map(async (desafio) => {
-            const contexto = desafio.contexto_desafio;
-            // Extrai o ID do desafio a partir do contexto
-            const challengeId = contexto.split(':')[1];
-
-            // Busca o título correto na tabela 'desafios'
-            const titlePromise = dbGet("SELECT titulo FROM desafios WHERE id = ?", [challengeId]);
-            
-            const statsPromise = dbGet(
-                `SELECT COUNT(*) as tr, SUM(acertou) as ta_bruto FROM respostas_simulado
-                 WHERE telegram_id = ? AND id_simulado IN (SELECT id_simulado FROM simulados WHERE contexto_desafio = ?)`,
-                [telegram_id, contexto]
-            );
-
-            const rankPromise = dbAll(
-                `SELECT r.telegram_id, MAX(r.pontos) as max_pontos_desafio FROM resultados r
-                 JOIN simulados s ON r.id_simulado = s.id_simulado
-                 WHERE s.contexto_desafio = ? GROUP BY r.telegram_id ORDER BY max_pontos_desafio DESC, MAX(r.data) DESC`,
-                [contexto]
-            );
-
-            // Executa as buscas em paralelo
-            const [desafioInfo, stats, allRanks] = await Promise.all([titlePromise, statsPromise, rankPromise]);
-
-            let userRank = "N/A", userMaxPoints = 0;
-            const rankIndex = allRanks.findIndex(rank => rank.telegram_id == telegram_id);
-            if (rankIndex !== -1) {
-                userRank = (rankIndex + 1).toString();
-                userMaxPoints = allRanks[rankIndex].max_pontos_desafio || 0;
+        const formattedTestsList = testsList.map(test => {
+            let tipo = 'Simulado';
+            if (test.is_training) {
+                tipo = 'Treino';
+            } else if (test.contexto_desafio) {
+                // Tenta extrair o ID do desafio para o tipo
+                const challengeIdMatch = test.contexto_desafio.match(/desafio:(\d+)/);
+                tipo = challengeIdMatch ? `Desafio ID ${challengeIdMatch[1]}` : 'Desafio';
             }
 
-            const totalAcertos = stats.ta_bruto || 0;
-            const totalRespostas = stats.tr || 0;
-            const percentualAcerto = totalRespostas > 0 ? (totalAcertos / totalRespostas * 100) : 0;
-            
-            // Retorna o objeto com o título correto
+            const percentual_acerto = test.total_perguntas > 0
+                ? (test.total_acertos / test.total_perguntas * 100).toFixed(2)
+                : '0.00';
+
             return {
-                contexto_desafio: contexto,
-                titulo_desafio: desafioInfo ? desafioInfo.titulo : contexto.replace(/.*:/,'').replace(/_/g, ' '),
-                total_perguntas_no_desafio: totalRespostas,
-                total_acertos_brutos_no_desafio: totalAcertos,
-                percentual_acerto_bruto_formatado: percentualAcerto.toFixed(2),
-                pontuacao_final_maxima_usuario: userMaxPoints,
-                rank_usuario_no_desafio: userRank,
+                id_simulado: test.id_simulado,
+                data_inicio: test.data_inicio,
+                tipo: tipo,
+                total_perguntas: test.total_perguntas,
+                total_acertos: test.total_acertos || 0,
+                percentual_acerto: percentual_acerto,
+                acertos_display: `${test.total_acertos || 0}/${test.total_perguntas}`
             };
         });
 
-        const challenges_details_list = await Promise.all(challengeDetailsPromises);
-        res.status(200).json(challenges_details_list);
+        res.status(200).json(formattedTestsList);
 
     } catch (error) {
-        console.error("Erro ao buscar detalhes dos desafios do usuário:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        console.error("Erro ao buscar lista de testes do usuário:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao buscar lista de testes." });
     }
 };
 
-export const getChallengeDetailsController = async (req, res) => {
+export const getTestDetailsController = async (req, res) => {
     try {
-        const { contexto_desafio, telegram_id } = req.query;
-        if (!contexto_desafio) {
-            return res.status(400).json({ error: 'contexto_desafio é obrigatório.' });
+        const { id_simulado, telegram_id } = req.query; // telegram_id não é usado nesta função, mas mantido por consistência se necessário
+        if (!id_simulado) {
+            return res.status(400).json({ error: 'id_simulado é obrigatório.' });
         }
 
-        const generalStatsPromise = dbGet(
-            `SELECT COUNT(DISTINCT telegram_id) as total_participantes, SUM(acertou) as total_acertos_desafio_bruto, COUNT(rs.id) as total_respostas_desafio
-             FROM simulados s JOIN respostas_simulado rs ON s.id_simulado = rs.id_simulado
-             WHERE s.contexto_desafio = ?`,
-            [contexto_desafio]
+        const testDetails = await dbAll(
+            `SELECT
+                pergunta,
+                resposta_usuario,
+                resposta_correta,
+                acertou,
+                tema,
+                subtema
+             FROM respostas_simulado
+             WHERE id_simulado = ?`,
+            [id_simulado]
         );
 
-        const top10Promise = dbAll(
-            `SELECT u.first_name, MAX(r.pontos) as max_pontos_desafio FROM resultados r
-             JOIN usuarios u ON r.telegram_id = u.telegram_id
-             JOIN simulados s ON r.id_simulado = s.id_simulado
-             WHERE s.contexto_desafio = ?
-             GROUP BY r.telegram_id, u.first_name ORDER BY max_pontos_desafio DESC LIMIT 10`,
-            [contexto_desafio]
+        const simuladoInfo = await dbGet(
+            `SELECT data_inicio, is_training, contexto_desafio
+             FROM simulados
+             WHERE id_simulado = ?`,
+            [id_simulado]
         );
 
-        let userSpecificPromises = [];
-        if (telegram_id) {
-            const userStatsPromise = dbGet(
-                `SELECT COUNT(*) as tr, SUM(acertou) as ta_bruto FROM respostas_simulado
-                 WHERE telegram_id = ? AND id_simulado IN (SELECT id_simulado FROM simulados WHERE contexto_desafio = ?)`,
-                [telegram_id, contexto_desafio]
-            );
-            const userRankPromise = dbAll(
-                `SELECT r.telegram_id, MAX(r.pontos) as max_pontos_desafio FROM resultados r
-                 JOIN simulados s ON r.id_simulado = s.id_simulado
-                 WHERE s.contexto_desafio = ? GROUP BY r.telegram_id ORDER BY max_pontos_desafio DESC`,
-                [contexto_desafio]
-            );
-            userSpecificPromises = [userStatsPromise, userRankPromise];
-        }
-
-        const [
-            generalStats,
-            top10,
-            ...userSpecificResults
-        ] = await Promise.all([
-            generalStatsPromise,
-            top10Promise,
-            ...userSpecificPromises
-        ]);
-
-        const taxaAcertoMedia = generalStats.total_respostas_desafio > 0
-            ? (generalStats.total_acertos_desafio_bruto / generalStats.total_respostas_desafio * 100)
-            : 0;
-
-        const responseData = {
-            contexto_desafio: contexto_desafio,
-            general_challenge_stats: {
-                total_participantes_unicos: generalStats.total_participantes || 0,
-                taxa_acerto_media_bruta_geral_formatada: `${taxaAcertoMedia.toFixed(2)}%`,
-            },
-            top_10_challenge_final_scores: top10.map(u => ({ nome: u.first_name, pontos: u.max_pontos_desafio })),
-            user_specific_stats: null
-        };
-        
-        if (telegram_id && userSpecificResults.length > 0) {
-            const [userStats, allRanks] = userSpecificResults;
-            
-            let userRank = "N/A", userMaxPoints = 0;
-            const rankIndex = allRanks.findIndex(rank => rank.telegram_id == telegram_id);
-            if (rankIndex !== -1) {
-                userRank = (rankIndex + 1).toString();
-                userMaxPoints = allRanks[rankIndex].max_pontos_desafio || 0;
+        let tipo = 'Simulado';
+        if (simuladoInfo) {
+             if (simuladoInfo.is_training) {
+                tipo = 'Treino';
+            } else if (simuladoInfo.contexto_desafio) {
+                // Tenta extrair o ID do desafio para o tipo
+                const challengeIdMatch = simuladoInfo.contexto_desafio.match(/desafio:(\d+)/);
+                tipo = challengeIdMatch ? `Desafio ID ${challengeIdMatch[1]}` : 'Desafio';
             }
-
-            const userTotalAcertos = userStats.ta_bruto || 0;
-            const userTotalRespostas = userStats.tr || 0;
-            const userPercentual = userTotalRespostas > 0 ? (userTotalAcertos / userTotalRespostas * 100) : 0;
-
-            responseData.user_specific_stats = {
-                total_acertos_brutos_usuario: userTotalAcertos,
-                percentual_acerto_bruto_usuario_formatado: `${userPercentual.toFixed(2)}%`,
-                pontuacao_final_maxima_usuario_desafio: userMaxPoints,
-                rank_usuario_no_desafio: userRank
-            };
         }
 
-        res.status(200).json(responseData);
+        res.status(200).json({
+            simuladoInfo: {
+                 data_inicio: simuladoInfo ? simuladoInfo.data_inicio : null,
+                 tipo: tipo
+            },
+            respostas: testDetails
+        });
 
     } catch (error) {
-        console.error("Erro ao buscar detalhes do desafio:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        console.error("Erro ao buscar detalhes do teste:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao buscar detalhes do teste." });
     }
 };

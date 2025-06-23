@@ -1,179 +1,178 @@
+/* Estilos gerais do container da página */
 .screenContainer {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--primary-background);
-}
-
-.headerBar {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    background-color: var(--primary-dark-purple);
-    color: var(--secondary-white);
-    min-height: 40px;
-    flex-shrink: 0;
-}
-
-.headerIconBtn {
-    background: none;
-    border: none;
-    color: var(--secondary-white);
-    cursor: pointer;
-    padding: 8px;
-    line-height: 0;
-    text-decoration: none;
-}
-
-.screenTitle {
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    flex-grow: 1;
-    margin: 0;
-    padding-right: 40px; /* Compensa o botão de voltar */
-}
-
-/* Estilos para o card de resumo do usuário */
-.userSummarySection {
-    background-color: var(--secondary-white);
     padding: 20px;
-    margin: 15px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: var(--primary-background); /* Cor de fundo principal */
+    color: var(--primary-dark-black); /* Cor do texto principal */
+    font-family: 'Roboto', sans-serif; /* Fonte */
+    min-height: 100vh; /* Garante que o fundo cubra a tela inteira */
+}
+
+/* Seção de resumo do usuário */
+.userSummarySection {
     display: flex;
     align-items: center;
-    gap: 15px;
+    background-color: var(--secondary-white); /* Fundo branco para a seção */
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Sombra suave */
+    margin-bottom: 20px;
 }
 
 .avatar {
     width: 60px;
     height: 60px;
-    border-radius: 50%;
-    background-color: var(--secondary-dark-grey);
-    object-fit: cover;
-    border: 2px solid var(--primary-light-purple);
-    flex-shrink: 0;
+    border-radius: 50%; /* Avatar redondo */
+    margin-right: 15px;
+    object-fit: cover; /* Garante que a imagem cubra a área */
+    border: 2px solid var(--primary-light-purple); /* Borda sutil */
 }
 
 .userDetails {
     flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
 }
 
 .userName {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--primary-dark-black);
-    margin: 0;
+    margin: 0 0 10px 0;
 }
 
 .highlightStatsGrid {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Layout responsivo */
+    gap: 15px; /* Espaço entre os itens */
 }
 
 .statItem {
-    text-align: center;
-    background-color: var(--primary-background);
-    padding: 6px 8px;
+    background-color: var(--primary-light-purple); /* Cor de fundo para os itens de estatística */
+    padding: 10px 15px;
     border-radius: 8px;
-    flex-basis: 0;
-    flex-grow: 1;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Sombra suave */
 }
 
 .statValue {
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 700;
-    color: var(--primary-dark-purple);
-    display: block;
-    margin-bottom: 1px;
+    color: var(--primary-dark-purple); /* Cor do valor */
+    display: block; /* Garante que o valor fique em sua própria linha */
+    margin-bottom: 4px;
 }
 
 .statLabel {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--secondary-dark-grey);
+    font-size: 12px;
+    color: var(--secondary-dark-grey); /* Cor do rótulo */
     display: block;
-    line-height: 1.2;
 }
 
-/* Estilos para as Abas */
+/* Navegação por abas */
 .tabsNavigation {
     display: flex;
-    justify-content: space-around;
-    padding: 0 15px;
-    margin-bottom: 15px;
+    justify-content: space-around; /* Espalha os botões */
+    margin-bottom: 20px;
     background-color: var(--secondary-white);
-    border-radius: 28px;
-    margin-left: 15px;
-    margin-right: 15px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .tabButton {
+    flex-grow: 1; /* Faz os botões preencherem o espaço */
     padding: 10px 15px;
     border: none;
-    border-radius: 22px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    flex-grow: 1;
-    margin: 4px;
     background-color: transparent;
     color: var(--secondary-dark-grey);
-    transition: background-color 0.3s, color 0.3s;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.3s ease, border-bottom 0.3s ease;
+    border-bottom: 2px solid transparent; /* Borda inferior transparente por padrão */
+    text-align: center;
 }
 
 .tabButton.active {
-    background-color: var(--primary-dark-purple);
-    color: var(--secondary-white);
-    box-shadow: 0 2px 4px rgba(108, 48, 191, 0.3);
+    color: var(--primary-dark-purple); /* Cor do texto para aba ativa */
+    border-bottom-color: var(--primary-dark-purple); /* Borda inferior para aba ativa */
+    font-weight: 700;
 }
 
+.tabButton:hover:not(.active) {
+    color: var(--primary-dark-purple); /* Cor do texto ao passar o mouse (se não estiver ativo) */
+}
+
+/* Área de conteúdo das abas */
 .contentArea {
-    padding: 0 15px 15px 15px;
-    flex-grow: 1;
-    overflow-y: auto;
+    position: relative; /* Necessário para posicionar o conteúdo das abas */
 }
 
 .tabContent {
-    display: none;
-    flex-direction: column;
-    gap: 15px;
+    display: none; /* Oculta o conteúdo por padrão */
+    flex-direction: column; /* Conteúdo em coluna */
+    gap: 15px; /* Espaço entre os itens da lista */
 }
 
 .tabContent.active {
-    display: flex;
+    display: flex; /* Exibe o conteúdo da aba ativa */
 }
 
-/* Estilos para os cards de estatísticas */
+/* Mensagem de "Sem dados" */
+.noDataMessage {
+    text-align: center;
+    color: var(--secondary-dark-grey);
+    font-size: 14px;
+    padding: 20px;
+    background-color: var(--secondary-white);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos para os itens de desempenho (PerformanceItem) e itens da lista de testes (TestListItem) */
 .listStatCard {
+    display: flex;
+    align-items: center;
     background-color: var(--secondary-white);
     padding: 15px;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .itemIcon {
     width: 40px;
     height: 40px;
-    border-radius: 8px;
-    background-color: var(--primary-light-purple);
+    min-width: 40px; /* Garante que o ícone não diminua */
     display: flex;
-    align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    margin-top: 3px;
+    align-items: center;
+    border-radius: 8px;
+    margin-right: 15px;
+    background-color: var(--primary-light-purple);
+    /* Cor de fundo definida na classe específica (testTypeSimulado, testTypeTreino, testTypeDesafio) */
+}
+
+.itemIconTeste {
+    width: 40px;
+    height: 40px;
+    min-width: 40px; /* Garante que o ícone não diminua */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    margin-right: 15px;
+    /* Cor de fundo definida na classe específica (testTypeSimulado, testTypeTreino, testTypeDesafio) */
+}
+
+
+.itemIcon svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--primary-dark-purple); /* Cor do ícone dentro do fundo colorido */
+}
+
+.itemIconTeste svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--secondary-white); /* Cor do ícone dentro do fundo colorido */
 }
 
 .itemInfo {
@@ -181,42 +180,188 @@
 }
 
 .itemTitle {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--primary-dark-black);
-    margin: 0 0 8px 0;
+    margin: 0 0 5px 0;
 }
 
 .itemDetail {
-    font-size: 12px;
-    color: var(--primary-dark-black);
-    font-weight: 500;
+    font-size: 13px;
+    color: var(--secondary-dark-grey);
+    margin: 0 0 0px 0;
 }
 
 .itemDetail strong {
-    color: var(--primary-dark-purple);
+     font-weight: 600;
 }
+
 
 .progressBarContainer {
     width: 100%;
-    height: 8px;
-    background-color: var(--primary-light-purple);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 8px;
+    height: 6px;
+    background-color: #d3d3d3;
+    border-radius: 3px;
+    overflow: hidden; /* Garante que a barra de preenchimento fique dentro */
+    margin-top:6px;
 }
 
 .progressBarFill {
     height: 100%;
-    background-color: var(--primary-dark-purple);
-    border-radius: 4px;
-    width: 0%; /* Será definido via estilo inline */
-    transition: width 0.5s ease-in-out;
+    background-color: var(--primary-dark-purple); /* Cor da barra de preenchimento */
+    border-radius: 3px;
+    transition: width 0.5s ease; /* Animação suave */
 }
 
-.noDataMessage {
-    text-align: center;
+/* Estilos específicos para a lista de testes */
+.testListItem {
+    cursor: pointer; /* Indica que o item é clicável */
+    transition: background-color 0.2s ease; /* Efeito hover */
+}
+
+.testListItem:hover {
+    background-color: var(--primary-background); /* Cor de fundo ao passar o mouse */
+}
+
+/* Cores distintas para os tipos de teste */
+.testTypeSimulado {
+    background-color: var(--primary-light-purple); /* Cor existente para ícone */
+}
+
+.testTypeTreino {
+    background-color: #a5d6a7; /* Exemplo: Verde claro (Material Design - Light Green 300) */
+}
+
+.testTypeDesafio {
+    background-color: #ffab91; /* Exemplo: Laranja claro (Material Design - Deep Orange 200) */
+}
+
+
+/* Estilos para o Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo semi-transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Garante que fique acima de outros elementos */
+    padding: 15px; /* Padding para telas menores */
+}
+
+.modalContent {
+    background-color: var(--secondary-white);
+    border-radius: 12px;
     padding: 20px;
-    font-size: 14px;
+    width: 100%;
+    max-width: 600px; /* Largura máxima para telas maiores */
+    max-height: 90vh; /* Altura máxima para caber na tela */
+    overflow-y: auto; /* Adiciona scroll se o conteúdo for grande */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--primary-light-purple);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-dark-black);
+    margin: 0;
+}
+
+.modalCloseButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
     color: var(--secondary-dark-grey);
+    padding: 0;
+}
+
+.modalBody {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espaço entre os itens de questão */
+}
+
+/* Estilos para cada questão dentro do modal */
+.questionDetailItem {
+    background-color: var(--primary-background); /* Fundo leve para cada questão */
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--primary-light-purple);
+}
+
+.questionHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.questionText {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-dark-black);
+    margin: 0;
+    flex-grow: 1;
+}
+
+.answerText {
+    font-size: 13px;
+    color: var(--secondary-dark-grey);
+    margin: 0 0 4px 28px; /* Alinha com o texto da pergunta, considerando o ícone */
+}
+
+.answerText strong {
+     font-weight: 700;
+}
+
+.answerCorrect {
+    color: green; /* Cor para resposta correta */
+}
+
+.answerIncorrect {
+    color: red; /* Cor para resposta incorreta */
+}
+
+.questionTopic {
+    font-size: 11px;
+    color: var(--secondary-dark-grey);
+    margin: 0 0 0 28px;
+    font-style: italic;
+}
+
+/* Responsividade básica para o modal */
+@media (max-width: 600px) {
+    .modalContent {
+        padding: 15px;
+    }
+    .modalTitle {
+        font-size: 16px;
+    }
+    .questionText {
+        font-size: 13px;
+    }
+    .answerText {
+        font-size: 12px;
+        margin-left: 20px;
+    }
+     .questionTopic {
+        font-size: 10px;
+        margin-left: 20px;
+    }
 }

@@ -27,7 +27,6 @@ const initializeDb = () => {
                 console.log("Coluna 'is_training' adicionada com sucesso à tabela simulados");
             }
         });
-        // ✅ ADICIONA A COLUNA 'matricula'
         db.run("ALTER TABLE usuarios ADD COLUMN matricula TEXT", (err) => {
              if (err && !err.message.includes('duplicate column name')) {
                 console.error("Erro ao adicionar coluna 'matricula':", err.message);
@@ -77,7 +76,6 @@ const initializeDb = () => {
     db.serialize(() => {
         db.run('PRAGMA foreign_keys = ON');
 
-        // Tabela de usuários com a nova coluna 'matricula'
         db.run(`CREATE TABLE IF NOT EXISTS usuarios (
             telegram_id TEXT PRIMARY KEY,
             first_name TEXT,
@@ -90,15 +88,8 @@ const initializeDb = () => {
             data_cadastro TEXT,
             photo_url TEXT,
             is_admin BOOLEAN DEFAULT FALSE,
-            matricula TEXT -- ✅ NOVA COLUNA
+            matricula TEXT
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'usuarios':", err.message); });
-
-        // A verificação de coluna is_admin pode ser removida se a tabela já foi criada com ela acima
-        // db.run("ALTER TABLE usuarios ADD COLUMN is_admin BOOLEAN DEFAULT FALSE", (err) => {
-        //     if (err && !err.message.includes('duplicate column name')) {
-        //         console.error("Erro ao adicionar coluna 'is_admin':", err.message);
-        //     }
-        // });
 
         db.run(`CREATE TABLE IF NOT EXISTS admin_credentials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,76 +122,87 @@ const initializeDb = () => {
 
         db.run(`CREATE TABLE IF NOT EXISTS resultados (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            telegram_id TEXT NOT NULL,
-            id_simulado INTEGER NOT NULL,
-            pontos INTEGER NOT NULL,
-            total_perguntas INTEGER NOT NULL,
-            data TEXT NOT NULL,
-            FOREIGN KEY (id_simulado) REFERENCES simulados (id_simulado)
+            telegram_id TEXT UNIQUE NOT NULL,
+            total_simulados_realizados INTEGER DEFAULT 0,
+            total_perguntas_respondidas INTEGER DEFAULT 0,
+            total_acertos INTEGER DEFAULT 0,
+            FOREIGN KEY (telegram_id) REFERENCES usuarios (telegram_id)
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'resultados':", err.message); });
 
+         db.run(`CREATE TABLE IF NOT EXISTS desempenho_subtemas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id TEXT NOT NULL,
+            subtema TEXT NOT NULL,
+            total_respostas INTEGER DEFAULT 0,
+            acertos_brutos INTEGER DEFAULT 0,
+            UNIQUE (telegram_id, subtema),
+            FOREIGN KEY (telegram_id) REFERENCES usuarios (telegram_id)
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'desempenho_subtemas':", err.message); });
+
         db.run(`CREATE TABLE IF NOT EXISTS configuracoes (
-            chave TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chave TEXT UNIQUE NOT NULL,
             valor TEXT
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'configuracoes':", err.message); });
 
-        db.run(`CREATE TABLE IF NOT EXISTS desafios (
+         db.run(`CREATE TABLE IF NOT EXISTS desafios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             titulo TEXT NOT NULL,
             descricao TEXT,
-            publico_alvo_json TEXT,
             data_inicio TEXT NOT NULL,
             data_fim TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'ativo',
-            num_perguntas INTEGER DEFAULT 10
+            perguntas_ids TEXT,
+            ativo BOOLEAN DEFAULT TRUE
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafios':", err.message); });
 
-        db.run(`CREATE TABLE IF NOT EXISTS desafio_filtros (
+        db.run(`CREATE TABLE IF NOT EXISTS desafio_participantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             desafio_id INTEGER NOT NULL,
-            tipo_filtro TEXT NOT NULL,
-            valor_filtro TEXT NOT NULL,
-            FOREIGN KEY (desafio_id) REFERENCES desafios (id) ON DELETE CASCADE
-        )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafio_filtros':", err.message); });
+            telegram_id TEXT NOT NULL,
+            data_participacao TEXT NOT NULL,
+            UNIQUE (desafio_id, telegram_id),
+            FOREIGN KEY (desafio_id) REFERENCES desafios (id),
+            FOREIGN KEY (telegram_id) REFERENCES usuarios (telegram_id)
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafio_participantes':", err.message); });
 
-        db.run(`CREATE TABLE IF NOT EXISTS perguntas (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              pergunta_raw_csv TEXT,
-              pergunta_formatada_display TEXT NOT NULL,
-              alternativas TEXT NOT NULL,
-              correta TEXT NOT NULL,
-              publico TEXT,
-              canal TEXT,
-              tema TEXT,
-              subtema TEXT,
-              feedback TEXT,
-              fonte TEXT
-          )`, (err) => {
-          if (err) console.error("Erro ao criar tabela 'perguntas':", err.message);
-        });
-
-        db.run(`CREATE TABLE IF NOT EXISTS knowledge_pills (
+         db.run(`CREATE TABLE IF NOT EXISTS desafio_respostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            target_cargo TEXT,
-            target_canal TEXT,
-            tema TEXT,
-            conteudo TEXT NOT NULL,
-            source_file TEXT,
-            source_page TEXT,
-            telegram_file_id TEXT,
-            last_sent_at TEXT
-        )`, (err) => { if (err) console.error("Erro ao criar tabela 'knowledge_pills':", err.message); });
+            desafio_id INTEGER NOT NULL,
+            telegram_id TEXT NOT NULL,
+            pergunta_id INTEGER NOT NULL,
+            resposta_usuario TEXT,
+            acertou BOOLEAN,
+            data_resposta TEXT NOT NULL,
+            FOREIGN KEY (desafio_id) REFERENCES desafios (id),
+            FOREIGN KEY (telegram_id) REFERENCES usuarios (telegram_id)
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafio_respostas':", err.message); });
 
-        db.run("CREATE INDEX IF NOT EXISTS idx_respostas_telegram ON respostas_simulado (telegram_id);");
-        db.run("CREATE INDEX IF NOT EXISTS idx_simulados_telegram ON simulados (telegram_id);");
-        db.run("CREATE INDEX IF NOT EXISTS idx_resultados_telegram ON resultados (telegram_id);");
+        db.run(`CREATE TABLE IF NOT EXISTS pills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            texto TEXT NOT NULL,
+            data_criacao TEXT NOT NULL
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'pills':", err.message); });
 
-        console.log("Verificação de tabelas e índices concluída.");
 
-        addMissingColumns(); // ✅ Chama a função para adicionar colunas ausentes
+        addMissingColumns();
         seedInitialConfigs();
         seedSuperAdmin();
     });
+};
+
+export const loadQuestionsFromCsv = (filePath, callback) => {
+    const questions = [];
+    fs.createReadStream(filePath)
+        .pipe(csv({ separator: ';' }))
+        .on('data', (row) => {
+            questions.push(row);
+        })
+        .on('end', () => {
+            callback(null, questions);
+        })
+        .on('error', (error) => {
+            callback(error);
+        });
 };
 
 export default db;

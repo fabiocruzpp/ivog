@@ -30,7 +30,7 @@ app.use('/api/user', userRoutes);
 app.use('/api', optionsRoutes); 
 app.use('/api/quiz', quizRoutes);
 app.use('/api', rankingRoutes);
-app.use('/api', statsRoutes);
+app.use('/api/stats', statsRoutes);
 app.use('/api', utilityRoutes);
 app.use('/api', challengeRoutes);
 app.use('/api', configRoutes);
