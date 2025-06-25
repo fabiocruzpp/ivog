@@ -457,51 +457,39 @@ function KnowledgePillsManagement() {
         fetchPills();
     }, [fetchPills]);
 
-    const handleImportCsv = async () => { // Ou como sua função estiver definida
-    console.log('Botão Importar XLSX clicado. Iniciando processo...');
-    // ... restante da sua lógica de importação
-    if (!csvFile) { // Verifique se o arquivo está no estado
-        console.log('Estado csvFile está vazio.');
-        return; // Sai se não houver arquivo
-    }
-    console.log('Arquivo no estado:', csvFile);
-
-    const formData = new FormData();
-    // Verifique o nome do campo que o backend espera (geralmente 'file' ou 'upload')
-    // No seu backend, a configuração do multer na rota deve especificar isso, ex: router.post('/import-csv', upload.single('nomeDoCampo'), importController);
-    const fieldName = 'file'; // <-- Substitua 'file' pelo nome correto esperado pelo multer
-    formData.append(fieldName, csvFile);
-    console.log('FormData criado com o arquivo:', fieldName);
-
-    try {
-        // Verifique a URL correta
-        const response = await api.post('/admin/knowledge-pills/import-csv', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data' // Importante para FormData
-            }
-        });
-        console.log('Resposta da API:', response.data);
-        addToast('Importação iniciada!', 'info'); // Feedback inicial
-        // ... lógica para lidar com a resposta de sucesso (exibir resultados, erros)
-        if (response.data.errors && response.data.errors.length > 0) {
-             addToast(`Importação concluída com erros: ${response.data.errors.length} erros.`, 'warning');
-             // Talvez exibir os erros na tela
-        } else {
-             addToast(response.data.message || 'Importação concluída com sucesso!', 'success');
+    const handleImportCsv = async () => {
+        console.log('Botão Importar XLSX clicado. Iniciando processo...');
+        if (!csvFile) {
+            console.log('Estado csvFile está vazio.');
+            return;
         }
-         fetchPills(); // Atualiza a lista após importação
-    } catch (error) {
-        console.error('Erro na importação:', error);
-        // Exibe um toast com a mensagem de erro do backend, se disponível
-        addToast(error.response?.data?.error || 'Erro ao importar arquivo.', 'error');
-        // Loga detalhes do erro para depuração
-        console.error('Detalhes do erro:', error.response?.data || error.message);
-    }
+        console.log('Arquivo no estado:', csvFile);
+
+        const formData = new FormData();
+        const fieldName = 'file';
+        formData.append(fieldName, csvFile);
+        console.log('FormData criado com o arquivo:', fieldName);
+
+        try {
+            const response = await api.post('/admin/knowledge-pills/import-csv', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            console.log('Resposta da API:', response.data);
+            addToast('Importação iniciada!', 'info');
+            if (response.data.errors && response.data.errors.length > 0) {
+                 addToast(`Importação concluída com erros: ${response.data.errors.length} erros.`, 'warning');
+            } else {
+                 addToast(response.data.message || 'Importação concluída com sucesso!', 'success');
+            }
+             fetchPills();
+        } catch (error) {
+            console.error('Erro na importação:', error);
+            addToast(error.response?.data?.error || 'Erro ao importar arquivo.', 'error');
+            console.error('Detalhes do erro:', error.response?.data || error.message);
+        }
     };
-
-
-
-
 
     const handleSendNow = async () => {
         if(window.confirm('Deseja enviar uma pílula para os usuários agora? Esta ação é independente do agendador.')) {
@@ -595,9 +583,14 @@ function KnowledgePillsManagement() {
         for (const file of mediaFiles) {
             formData.append('mediafiles', file);
         }
+        
         showLoading();
         try {
-            const res = await api.post('/admin/pills/upload-media', formData);
+            const res = await api.post('/admin/pills/upload-media', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             addToast(res.data.message, 'success');
             setMediaFiles(null);
             if (mediaInputRef.current) mediaInputRef.current.value = null;
@@ -713,6 +706,22 @@ function KnowledgePillsManagement() {
         };
     };
 
+    const renderFileStatus = (pill) => {
+        // Se não há arquivo de origem, mostra "Sem Anexo"
+        if (!pill.source_file) {
+            return <span className={`${styles.statusBadge} ${styles.noFile}`}>Sem Anexo</span>;
+        }
+        
+        // A propriedade 'fileExists' agora vem da API.
+        // Se 'fileExists' for true, o arquivo foi encontrado.
+        if (pill.fileExists) {
+            return <span className={`${styles.statusBadge} ${styles.synced}`}>✅ Encontrado</span>;
+        } 
+        
+        // Se 'fileExists' for false, o arquivo está ausente.
+        return <span className={`${styles.statusBadge} ${styles.pending}`}>❌ Ausente</span>;
+    };
+
     const pillsStatus = getPillsStatus();
 
     return (
@@ -819,7 +828,7 @@ function KnowledgePillsManagement() {
                                 <div className={styles.fileUpload}>
                                     <input
                                         type="file"
-                                        accept=".xlsx" // Alterado de .csv para .xlsx
+                                        accept=".xlsx"
                                         ref={csvInputRef}
                                         onChange={(e) => setCsvFile(e.target.files[0])}
                                         className={styles.fileInput}
@@ -872,9 +881,9 @@ function KnowledgePillsManagement() {
                         <div className={styles.importStep}>
                             <div className={styles.stepNumber}>3</div>
                             <div className={styles.stepContent}>
-                                <h4>Sincronizar</h4>
+                                <h4>Verificar Mídias</h4>
                                 <button onClick={handleSyncMedia} className={styles.syncButton}>
-                                    🔄 Sincronizar Mídias
+                                    🔄 Verificar Mídias
                                 </button>
                             </div>
                         </div>
@@ -937,9 +946,7 @@ function KnowledgePillsManagement() {
                                         )}
                                     </div>
                                     <div className={styles.statusColumn} data-label="Status">
-                                        <span className={`${styles.statusBadge} ${pill.telegram_file_id ? styles.synced : styles.pending}`}>
-                                            {pill.telegram_file_id ? '✅ Sincronizado' : '⏳ Pendente'}
-                                        </span>
+                                        {renderFileStatus(pill)}
                                     </div>
                                     <div className={styles.actionsColumn} data-label="Ações">
                                         <button 

@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import db from '../database/database.js';
-import { sendMessageToAllUsers, sendFileToUsers } from './telegramService.js';
+// A função sendFileToUsers não é mais necessária aqui.
+import { sendMessageToAllUsers } from './telegramService.js';
 import { promisify } from 'util';
 
 const dbGet = promisify(db.get.bind(db));
@@ -14,7 +15,6 @@ const isQuietTime = async () => {
     try {
         console.log('🔍 Verificando horário silencioso...');
         
-        // Buscar configurações
         const enabledConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'pills_quiet_time_enabled'");
         const startConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'pills_quiet_time_start'");
         const endConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'pills_quiet_time_end'");
@@ -25,29 +25,25 @@ const isQuietTime = async () => {
             end: endConfig?.valor
         });
         
-        // Se não está habilitado, pode enviar
         if (!enabledConfig || enabledConfig.valor !== 'true') {
             console.log('✅ Horário silencioso DESABILITADO - pode enviar');
             return false;
         }
 
-        // Se não tem horários configurados, pode enviar
         if (!startConfig || !endConfig || !startConfig.valor || !endConfig.valor) {
             console.log('⚠️ Horários não configurados - pode enviar');
             return false;
         }
 
-        // ✅ USAR HORÁRIO DO BRASIL (UTC-3)
         const now = new Date();
         const brasilTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
         const currentHour = brasilTime.getHours();
         const currentMinute = brasilTime.getMinutes();
-        const currentTime = currentHour * 60 + currentMinute; // minutos desde meia-noite
+        const currentTime = currentHour * 60 + currentMinute;
         
         console.log(`🇧🇷 Horário Brasil: ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} (${currentTime} minutos)`);
         console.log(`🌍 Horário UTC: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
         
-        // Parsear horários configurados
         const [startHour, startMin] = startConfig.valor.split(':').map(Number);
         const [endHour, endMin] = endConfig.valor.split(':').map(Number);
         
@@ -58,12 +54,10 @@ const isQuietTime = async () => {
 
         let isQuiet = false;
         
-        // Caso especial: horário que cruza meia-noite (ex: 21:00 às 06:00)
         if (startTime > endTime) {
             isQuiet = currentTime >= startTime || currentTime <= endTime;
             console.log(`🌙 Horário cruza meia-noite: ${currentTime} >= ${startTime} || ${currentTime} <= ${endTime} = ${isQuiet}`);
         } else {
-            // Horário normal (ex: 08:00 às 18:00)
             isQuiet = currentTime >= startTime && currentTime <= endTime;
             console.log(`☀️ Horário normal: ${currentTime} >= ${startTime} && ${currentTime} <= ${endTime} = ${isQuiet}`);
         }
@@ -78,11 +72,11 @@ const isQuietTime = async () => {
         
     } catch (error) {
         console.error('❌ Erro ao verificar horário silencioso:', error);
-        return false; // Em caso de erro, permite envio
+        return false;
     }
 };
 
-// Lógica de envio centralizada
+// Lógica de envio centralizada E ATUALIZADA
 const sendNextPill = async () => {
     let pill;
     try {
@@ -114,11 +108,28 @@ const sendNextPill = async () => {
             const userIds = targetUsers.map(u => u.telegram_id);
             const messageContent = `<b>Você sabia?</b>\n\n${pill.conteudo}\n\n<b>Tema:</b> ${pill.tema}<b>\nFonte:</b> Pág.${pill.source_page}`;
             
-            if (pill.telegram_file_id) {
-                await sendFileToUsers(pill.telegram_file_id, userIds, messageContent);
+            // LÓGICA ATUALIZADA AQUI
+            // Se a pílula tem um nome de arquivo em 'source_file', envia com botão
+            if (pill.source_file && process.env.BACKEND_URL) {
+                const downloadUrl = `${process.env.BACKEND_URL}media/${pill.source_file}`;
+                const options = {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '⬇️ Baixar Material de Apoio', url: downloadUrl }]
+                        ]
+                    }
+                };4
+
+                await sendMessageToAllUsers(messageContent, userIds, options);
             } else {
+                // Caso contrário, envia apenas a mensagem de texto
+                if (pill.source_file && !process.env.BACKEND_URL) {
+                    console.warn(`AVISO: Pílula #${pill.id} tem um arquivo, mas a variável BACKEND_URL não está definida. O botão de download não será enviado.`);
+                }
                 await sendMessageToAllUsers(messageContent, userIds);
             }
+            // FIM DA LÓGICA ATUALIZADA
+
             const message = `Pílula #${pill.id} enviada para ${targetUsers.length} usuários.`;
             console.log('📤 ' + message);
             return { success: true, message };
@@ -146,7 +157,6 @@ const scheduledTask = async () => {
     console.log('📅 Tarefa agendada executada:', brasilTime.toLocaleString('pt-BR'));
     console.log('⏰ =========================');
     
-    // ✅ VERIFICAR horário silencioso ANTES de tentar enviar
     const isQuiet = await isQuietTime();
     if (isQuiet) {
         console.log('🔇 Horário silencioso ativo. Envio adiado.');
@@ -170,7 +180,6 @@ export const startPillsScheduler = async () => {
         const intervalConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'pills_broadcast_interval_minutes'");
         const interval = parseInt(intervalConfig?.valor, 10) || 60;
         
-        // Se for 999999, não agenda (desabilitado)
         if (interval >= 999999) {
             console.log('⏸️ Agendador de pílulas desabilitado (intervalo >= 999999).');
             return;
@@ -187,7 +196,6 @@ export const startPillsScheduler = async () => {
         
         console.log(`⚡ Agendador de Pílulas configurado para executar a cada ${interval} minuto(s).`);
         
-        // ✅ VERIFICAR e logar horário silencioso
         const enabledConfig = await dbGet("SELECT valor FROM configuracoes WHERE chave = 'pills_quiet_time_enabled'");
         if (enabledConfig && enabledConfig.valor === 'true') {
             const [startConfig, endConfig] = await Promise.all([
@@ -201,7 +209,6 @@ export const startPillsScheduler = async () => {
             console.log('🔊 Horário silencioso DESABILITADO');
         }
         
-        // Log do horário atual do Brasil
         const now = new Date();
         const brasilTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
       
@@ -211,18 +218,12 @@ export const startPillsScheduler = async () => {
     }
 };
 
-// Esta função será usada pelo disparo manual
 export const manualSendAndResetScheduler = async () => {
     const now = new Date();
     const brasilTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
     
     console.log("💡 Disparo manual de pílula solicitado.");
     console.log(`🇧🇷 Horário Brasil: ${brasilTime.toLocaleString('pt-BR')}`);
-    
-    // Para envio manual, vamos RESPEITAR o horário silencioso também
-    // Se quiser ignorar o horário silencioso no envio manual, descomente a linha abaixo:
-    // console.log("💡 Envio manual ignora horário silencioso.");
-    // const result = await sendNextPill();
     
     const isQuiet = await isQuietTime();
     if (isQuiet) {
@@ -235,7 +236,6 @@ export const manualSendAndResetScheduler = async () => {
     return result;
 };
 
-// Função utilitária para testar horário silencioso
 export const checkQuietTimeStatus = async () => {
     const isQuiet = await isQuietTime();
     const now = new Date();

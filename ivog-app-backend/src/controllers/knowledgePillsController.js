@@ -2,9 +2,10 @@ import db from '../database/database.js';
 import { promisify } from 'util';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
-import { sendFileAndGetId } from '../services/telegramService.js';
 import { manualSendAndResetScheduler } from '../services/schedulerService.js';
 import path from 'path';
+import fs from 'fs';
+import { writeFile } from 'fs/promises';
 
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
@@ -13,7 +14,16 @@ const dbGet = promisify(db.get.bind(db));
 const listPillsController = async (req, res) => {
     try {
         const pills = await dbAll("SELECT * FROM knowledge_pills ORDER BY id DESC");
-        res.status(200).json(pills);
+        const uploadPath = '/home/fabiocruzpp/ivog/ivog-app-backend/uploads/pills_media';
+        const pillsWithFileStatus = pills.map(pill => {
+            let fileExists = null;
+            if (pill.source_file) {
+                const filePath = path.join(uploadPath, pill.source_file);
+                fileExists = fs.existsSync(filePath);
+            }
+            return { ...pill, fileExists };
+        });
+        res.status(200).json(pillsWithFileStatus);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao listar pílulas do conhecimento.' });
     }
@@ -82,35 +92,25 @@ const importPillsCsvController = async (req, res) => {
         let csvContent;
         let fileName = 'imported.csv';
 
-        // Verificar se é JSON (novo formato do frontend)
         if (req.body && req.body.csvContent) {
             csvContent = req.body.csvContent;
             fileName = req.body.fileName || 'imported.csv';
             console.log('[CSV] ✅ Recebido via JSON, tamanho:', csvContent.length);
-        }
-        // Verificar se é arquivo via multer
-        else if (req.file) {
+        } else if (req.file) {
             csvContent = req.file.buffer.toString('utf-8');
             fileName = req.file.originalname;
             console.log('[CSV] ✅ Recebido via arquivo, tamanho:', csvContent.length);
-        }
-        else {
+        } else {
             console.log('[CSV] ❌ Nenhum conteúdo CSV encontrado');
             return res.status(400).json({ error: 'Nenhum arquivo CSV enviado' });
         }
 
-        console.log('[CSV] Conteúdo recebido (primeiros 200 chars):', csvContent.substring(0, 200));
-        console.log('[CSV] Nome do arquivo:', fileName);
-
-        // Processar o CSV linha por linha
         const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
-        console.log('[CSV] Número de linhas (incluindo cabeçalho):', lines.length);
 
         if (lines.length < 2) {
             return res.status(400).json({ error: 'CSV deve conter pelo menos uma linha de dados além do cabeçalho' });
         }
 
-        // Verificar cabeçalho
         const header = lines[0].trim();
         const expectedHeader = 'CARGO;TEMA;CONTEUDO;ARQUIVO_DE_ORIGEM;PAGINA';
         
@@ -124,7 +124,6 @@ const importPillsCsvController = async (req, res) => {
 
         console.log('[CSV] ✅ Cabeçalho válido');
 
-        // Processar cada linha de dados
         const successfulImports = [];
         const errors = [];
 
@@ -225,136 +224,6 @@ const importPillsCsvController = async (req, res) => {
     }
 };
 
-const importPillsCsvContentController = (req, res) => {
-    console.log('[DIAGNÓSTICO CSV CONTENT] === INÍCIO DO DIAGNÓSTICO ===');
-    console.log('[DIAGNÓSTICO CSV CONTENT] req.body:', JSON.stringify(req.body, null, 2));
-    
-    const { csvContent } = req.body;
-    
-    if (!csvContent) {
-        return res.status(400).json({ 
-            error: "Campo 'csvContent' é obrigatório.",
-            example: {
-                csvContent: "CARGO;TEMA;CONTEUDO;ARQUIVO_DE_ORIGEM;PAGINA\nAnalista;Tema 1;Conteúdo da pílula;arquivo.pdf;1"
-            }
-        });
-    }
-    
-    console.log('[DIAGNÓSTICO CSV CONTENT] Conteúdo CSV recebido, tamanho:', csvContent.length);
-    processCsvData(csvContent, res);
-};
-
-const debugCsvUploadController = (req, res) => {
-    console.log('[DEBUG] === ANÁLISE COMPLETA DA REQUISIÇÃO ===');
-    console.log('[DEBUG] Method:', req.method);
-    console.log('[DEBUG] Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('[DEBUG] Body:', JSON.stringify(req.body, null, 2));
-    console.log('[DEBUG] Files:', req.files);
-    console.log('[DEBUG] File:', req.file);
-    console.log('[DEBUG] Params:', req.params);
-    console.log('[DEBUG] Query:', req.query);
-    
-    res.status(200).json({
-        message: 'Debug realizado com sucesso',
-        received: {
-            method: req.method,
-            contentType: req.headers['content-type'],
-            contentLength: req.headers['content-length'],
-            hasFile: !!req.file,
-            hasFiles: !!req.files,
-            bodyKeys: Object.keys(req.body || {}),
-            body: req.body
-        }
-    });
-};
-
-// Função para processar CSV de string (JSON)
-const processCsvData = (csvData, res) => {
-    console.log('[DIAGNÓSTICO CSV DATA] Processando dados CSV...');
-    console.log('[DIAGNÓSTICO CSV DATA] Tamanho dos dados:', csvData.length);
-    console.log('[DIAGNÓSTICO CSV DATA] Primeiros 200 caracteres:', csvData.substring(0, 200));
-    
-    const pills = [];
-    const csvStream = Readable.from(csvData);
-
-    csvStream
-        .pipe(csv({ 
-            separator: ';',
-            headers: ['CARGO', 'TEMA', 'CONTEUDO', 'ARQUIVO_DE_ORIGEM', 'PAGINA'],
-            skipEmptyLines: true
-        }))
-        .on('data', (row) => {
-            console.log('[DIAGNÓSTICO CSV DATA] Linha lida:', row);
-            if (row.CONTEUDO && row.CONTEUDO.trim()) {
-                pills.push({
-                    target_cargo: JSON.stringify(row.CARGO ? row.CARGO.split('|') : []),
-                    target_canal: JSON.stringify([]),
-                    tema: row.TEMA || '',
-                    conteudo: row.CONTEUDO.trim(),
-                    source_file: row.ARQUIVO_DE_ORIGEM || '',
-                    source_page: row.PAGINA || ''
-                });
-            }
-        })
-        .on('end', () => {
-            console.log('[DIAGNÓSTICO CSV DATA] Total de pílulas processadas:', pills.length);
-            savePillsToDatabase(pills, res);
-        })
-        .on('error', (error) => {
-            console.error('[DIAGNÓSTICO CSV DATA] Erro no processamento do CSV:', error);
-            res.status(500).json({ error: 'Erro ao processar dados CSV.' });
-        });
-};
-
-// Função para salvar no banco de dados
-const savePillsToDatabase = async (pills, res) => {
-    if (pills.length === 0) {
-        return res.status(400).json({ error: "Nenhuma pílula válida encontrada no CSV." });
-    }
-
-    try {
-        const sql = `INSERT INTO knowledge_pills (target_cargo, target_canal, tema, conteudo, source_file, source_page) VALUES (?, ?, ?, ?, ?, ?)`;
-        
-        let successCount = 0;
-        let errorCount = 0;
-
-        for (const pill of pills) {
-            try {
-                await new Promise((resolve, reject) => {
-                    db.run(sql, [
-                        pill.target_cargo,
-                        pill.target_canal,
-                        pill.tema,
-                        pill.conteudo,
-                        pill.source_file,
-                        pill.source_page
-                    ], function (err) {
-                        if (err) reject(err);
-                        else resolve({ id: this.lastID });
-                    });
-                });
-                successCount++;
-            } catch (insertError) {
-                console.error('[DIAGNÓSTICO CSV] Erro ao inserir pílula:', insertError);
-                errorCount++;
-            }
-        }
-
-        res.status(200).json({
-            message: `Importação concluída! ${successCount} pílulas importadas com sucesso.`,
-            details: {
-                total_processadas: pills.length,
-                sucesso: successCount,
-                erros: errorCount
-            }
-        });
-
-    } catch (error) {
-        console.error('[DIAGNÓSTICO CSV] Erro geral na importação:', error);
-        res.status(500).json({ error: 'Erro ao importar pílulas do CSV.' });
-    }
-};
-
 const getPillByIdController = async (req, res) => {
     const { id } = req.params;
     try {
@@ -368,91 +237,115 @@ const getPillByIdController = async (req, res) => {
     }
 };
 
-const sendPillToTelegramController = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const pill = await dbGet("SELECT * FROM knowledge_pills WHERE id = ?", [id]);
-        if (!pill) {
-            return res.status(404).json({ error: 'Pílula não encontrada.' });
-        }
-
-        const message = `💊📚 **${pill.tema || 'Pílula de Conhecimento'}**\n\n${pill.conteudo}`;
-        
-        const fileId = await sendFileAndGetId(message);
-        res.status(200).json({ 
-            message: 'Pílula enviada para o Telegram com sucesso!',
-            fileId: fileId
-        });
-    } catch (error) {
-        console.error('Erro ao enviar pílula para Telegram:', error);
-        res.status(500).json({ error: 'Erro ao enviar pílula para o Telegram.' });
-    }
-};
-
-const syncMediaController = async (req, res) => {
-    const adminId = process.env.ADMIN_TELEGRAM_ID || '1318210843';
-    try {
-        const uniqueFilesToSync = await dbAll("SELECT DISTINCT source_file FROM knowledge_pills WHERE source_file != '' AND (telegram_file_id IS NULL OR telegram_file_id = '')");
-        
-        if (uniqueFilesToSync.length === 0) {
-            return res.status(200).json({ message: "Nenhum arquivo novo para sincronizar." });
-        }
-        
-        let syncedFileCount = 0;
-        let errors = [];
-        
-        for (const fileRecord of uniqueFilesToSync) {
-            const filename = fileRecord.source_file;
-            const filePath = path.join('uploads', 'pills_media', filename);
-            
-            try {
-                console.log(`Sincronizando arquivo: ${filename}`);
-                const fileId = await sendFileAndGetId(filePath, adminId);
-                
-                if (fileId) {
-                    await dbRun("UPDATE knowledge_pills SET telegram_file_id = ? WHERE source_file = ?", [fileId, filename]);
-                    syncedFileCount++;
-                    console.log(`✅ Arquivo ${filename} sincronizado com file_id: ${fileId}`);
-                } else {
-                    console.log(`❌ Não foi possível obter file_id para: ${filename}`);
-                    errors.push(filename);
-                }
-            } catch (error) {
-                console.error(`❌ Falha ao sincronizar o arquivo ${filename}:`, error);
-                errors.push(filename);
-            }
-        }
-        
-        let message = `${syncedFileCount} arquivo(s) único(s) foram sincronizados com sucesso.`;
-        if (errors.length > 0) {
-            message += ` Falha ao sincronizar: ${errors.join(', ')}. Verifique se os arquivos existem na pasta uploads/pills_media/`;
-        }
-        
-        res.status(200).json({ 
-            message,
-            details: {
-                total: uniqueFilesToSync.length,
-                synced: syncedFileCount,
-                errors: errors.length,
-                errorFiles: errors
-            }
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro durante o processo de sincronização:', error);
-        res.status(500).json({ error: "Erro durante o processo de sincronização." });
-    }
-};
-
 const manualSendPillsController = async (req, res) => {
     try {
-        await manualSendAndResetScheduler();
-        res.status(200).json({ message: 'Envio manual de pílulas executado com sucesso!' });
+        const result = await manualSendAndResetScheduler();
+        if (result.success) {
+            res.status(200).json({ message: result.message || 'Envio manual de pílulas executado com sucesso!' });
+        } else {
+            res.status(400).json({ error: result.message || 'Falha no envio manual de pílulas.' });
+        }
     } catch (error) {
         console.error('Erro no envio manual:', error);
         res.status(500).json({ error: 'Erro ao executar envio manual de pílulas.' });
     }
 };
+
+const syncMediaController = async (req, res) => {
+    try {
+        const filesInDb = await dbAll("SELECT DISTINCT source_file FROM knowledge_pills WHERE source_file IS NOT NULL AND source_file != ''");
+
+        if (filesInDb.length === 0) {
+            return res.status(200).json({ message: "Nenhuma pílula com arquivo de origem para verificar." });
+        }
+
+        const filesFound = [];
+        const filesMissing = [];
+        const uploadPath = '/home/fabiocruzpp/ivog/ivog-app-backend/uploads/pills_media';
+
+        for (const record of filesInDb) {
+            const filename = record.source_file;
+            const filePath = path.join(uploadPath, filename);
+
+            if (fs.existsSync(filePath)) {
+                filesFound.push(filename);
+            } else {
+                filesMissing.push(filename);
+                console.warn(`[VERIFICAÇÃO DE MÍDIA] ❌ Arquivo não encontrado: ${filename}`);
+            }
+        }
+
+        const message = `Verificação concluída. ${filesFound.length} arquivos encontrados. ${filesMissing.length} arquivos ausentes.`;
+        console.log(`[VERIFICAÇÃO DE MÍDIA] ${message}`);
+
+        res.status(200).json({
+            message,
+            details: {
+                totalChecked: filesInDb.length,
+                foundCount: filesFound.length,
+                missingCount: filesMissing.length,
+                missingFiles: filesMissing
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Erro durante o processo de verificação de mídia:', error);
+        res.status(500).json({ error: "Erro durante o processo de verificação de mídia." });
+    }
+};
+
+// ATUALIZADO com logs de diagnóstico
+const uploadMediaController = async (req, res) => {
+    console.log('\n[UPLOAD MÍDIA - DEBUG] === INÍCIO DA REQUISIÇÃO ===');
+    console.log('[UPLOAD MÍDIA - DEBUG] req.method:', req.method);
+    console.log('[UPLOAD MÍDIA - DEBUG] req.originalUrl:', req.originalUrl);
+    console.log('[UPLOAD MÍDIA - DEBUG] Content-Type Header:', req.headers['content-type']);
+    console.log('[UPLOAD MÍDIA - DEBUG] req.body:', req.body);
+    console.log('[UPLOAD MÍDIA - DEBUG] req.files:', req.files);
+    console.log('[UPLOAD MÍDIA - DEBUG] =================================\n');
+
+    if (!req.files || req.files.length === 0) {
+        console.log('[UPLOAD MÍDIA - DEBUG] ❌ NENHUM ARQUIVO ENCONTRADO EM req.files. Retornando erro 400.');
+        return res.status(400).json({ error: 'Nenhum arquivo de mídia recebido pelo servidor.' });
+    }
+
+    const uploadPath = '/home/fabiocruzpp/ivog/ivog-app-backend/uploads/pills_media';
+    const uploadedFiles = [];
+    const errors = [];
+
+    try {
+        await fs.promises.mkdir(uploadPath, { recursive: true });
+    } catch (dirError) {
+        console.error(`[UPLOAD MÍDIA] ❌ Erro ao criar diretório ${uploadPath}:`, dirError);
+        return res.status(500).json({ error: 'Erro interno ao preparar o diretório de upload.' });
+    }
+
+    for (const file of req.files) {
+        const finalPath = path.join(uploadPath, file.originalname);
+        try {
+            await writeFile(finalPath, file.buffer);
+            uploadedFiles.push(file.originalname);
+            console.log(`[UPLOAD MÍDIA] ✅ Arquivo salvo: ${finalPath}`);
+        } catch (error) {
+            console.error(`[UPLOAD MÍDIA] ❌ Falha ao salvar ${file.originalname}:`, error);
+            errors.push({ filename: file.originalname, error: error.message });
+        }
+    }
+
+    if (uploadedFiles.length === 0) {
+        return res.status(500).json({
+            error: 'Nenhum arquivo pôde ser salvo com sucesso.',
+            details: errors
+        });
+    }
+
+    res.status(201).json({
+        message: `${uploadedFiles.length} de ${req.files.length} arquivo(s) enviados com sucesso.`,
+        uploaded: uploadedFiles,
+        errors: errors
+    });
+};
+
 
 export default {
     listPillsController,
@@ -460,10 +353,8 @@ export default {
     updatePillController,
     deletePillController,
     importPillsCsvController,
-    importPillsCsvContentController,
-    debugCsvUploadController,
     getPillByIdController,
-    sendPillToTelegramController,
     manualSendPillsController,
-    syncMediaController
+    syncMediaController,
+    uploadMediaController
 };

@@ -35,6 +35,7 @@ app.use('/api', utilityRoutes);
 app.use('/api', challengeRoutes);
 app.use('/api', configRoutes);
 app.use('/api/knowledge-pills', knowledgePillsRoutes); // Adicione esta linha
+app.use('/media', express.static('/home/fabiocruzpp/ivog/ivog-app-backend/uploads/pills_media'));
 
 // Rota protegida por API Key
 app.use('/api', biRoutes);

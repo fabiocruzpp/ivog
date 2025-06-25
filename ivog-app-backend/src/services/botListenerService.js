@@ -5,6 +5,9 @@ import { promisify } from 'util';
 const dbGet = promisify(db.get.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
+// A URL para o seu Mini App deve ser configurada nas variáveis de ambiente.
+const miniAppUrl = process.env.MINI_APP_URL;
+
 const handleDocumentMessage = async (msg) => {
     const fromId = msg.from.id;
     const document = msg.document;
@@ -43,6 +46,38 @@ const handleDocumentMessage = async (msg) => {
     }
 };
 
+/**
+ * Cria e envia a mensagem de boas-vindas com o botão do Mini App.
+ * @param {object} msg O objeto da mensagem do Telegram.
+ */
+const handleStartOrMenuCommand = (msg) => {
+    const chatId = msg.chat.id;
+    const firstName = msg.from.first_name;
+
+    if (!miniAppUrl) {
+        console.error("A variável de ambiente MINI_APP_URL não está definida. O botão para o app não pode ser enviado.");
+        bot.sendMessage(chatId, `Olá, ${firstName}! Boas-vindas ao IVOG.`);
+        return;
+    }
+
+    const welcomeMessage = `Olá, ${firstName}!\nBem-vindo(a) ao Ivo G App! 🎉\n\nAqui você pode testar seus conhecimentos e aprender mais de forma divertida.\n\nPara começar, clique no botão abaixo para abrir o nosso mini app:\n\n✨ Instruções:\n1. Clique no botão 'Abrir APP'.\n2. Se for seu primeiro acesso, complete seu cadastro.\n3. Comece a jogar e teste seus conhecimentos!`;
+
+    const options = {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "🚀 Abrir APP 🚀",
+                        web_app: { url: miniAppUrl }
+                    }
+                ]
+            ]
+        }
+    };
+
+    bot.sendMessage(chatId, welcomeMessage, options);
+};
+
 export const initializeBotListeners = () => {
     if (!bot) {
         console.warn("Ouvintes do bot não foram inicializados pois o bot não está configurado.");
@@ -55,8 +90,15 @@ export const initializeBotListeners = () => {
     // Remove listeners antigos para evitar duplicação em caso de HMR (Hot Module Replacement) no modo dev
     bot.removeListener('message', bot.listeners('message').find(l => l.name === 'bound an'))
 
-    // Adiciona um listener geral para logar outras mensagens (opcional, bom para depuração)
+    // Adiciona um listener geral para mensagens
     bot.on('message', (msg) => {
+        // Verifica se a mensagem de texto é um dos comandos desejados
+        if (msg.text && (msg.text === '/start' || msg.text === '/menu')) {
+            handleStartOrMenuCommand(msg);
+            return; // Encerra a execução para não logar o comando como uma mensagem qualquer
+        }
+
+        // Lógica original para logar outras mensagens (opcional, bom para depuração)
         if (!msg.document) { // Evita logar a mesma mensagem de documento duas vezes
             console.log(`Mensagem recebida de ${msg.from.first_name} (${msg.from.id}): ${msg.text || '[Não é texto]'}`);
         }

@@ -19,7 +19,8 @@ const dbAll = promisify(db.all.bind(db));
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const sendMessageToAllUsers = async (messageText, targetUserIds = null) => {
+// VERSÃO ATUALIZADA: Aceita um terceiro parâmetro "options"
+export const sendMessageToAllUsers = async (messageText, targetUserIds = null, options = {}) => {
     if (!bot) {
         console.log("AVISO: Mensagem não enviada pois o bot não foi inicializado.");
         return;
@@ -37,9 +38,14 @@ export const sendMessageToAllUsers = async (messageText, targetUserIds = null) =
         console.log(`Iniciando envio de texto para ${users.length} usuários...`);
         let countSuccess = 0, countFail = 0, countBlocked = 0;
 
+        // Combina as opções padrão com as novas opções passadas
+        const defaultOptions = { parse_mode: 'HTML' };
+        const combinedOptions = { ...defaultOptions, ...options };
+
         for (const user of users) {
             try {
-                await bot.sendMessage(user.telegram_id, messageText, { parse_mode: 'HTML' });
+                // Usa as opções combinadas no envio
+                await bot.sendMessage(user.telegram_id, messageText, combinedOptions);
                 countSuccess++;
             } catch (error) {
                 countFail++;
@@ -51,7 +57,7 @@ export const sendMessageToAllUsers = async (messageText, targetUserIds = null) =
                     console.warn(`Limite de taxa atingido. Aguardando ${retryAfter} segundos...`);
                     await sleep(retryAfter * 1000);
                     try {
-                        await bot.sendMessage(user.telegram_id, messageText, { parse_mode: 'HTML' });
+                        await bot.sendMessage(user.telegram_id, messageText, combinedOptions);
                         countSuccess++;
                         countFail--;
                     } catch (retryError) {
@@ -92,6 +98,7 @@ export const sendFileAndGetId = async (filePath, targetChatId) => {
     }
 };
 
+// Esta função não será mais usada pela pílula, mas pode ser útil para outros fins.
 export const sendFileToUsers = async (file_id, targetUserIds, caption) => {
     if (!bot || !file_id || !targetUserIds || targetUserIds.length === 0) {
         return;
