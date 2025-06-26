@@ -76,22 +76,22 @@ router.post('/import-questions', cors(), uploadDisk.single('file'), importQuesti
 router.post('/knowledge-pills/import-csv', cors(), uploadDisk.single('file'), importPillsCsvController);
 
 
-router.post('/toggle_config/:key', toggleAdminConfigController);
-router.post('/set_config/:key', setAdminConfigController);
-router.get('/challenge_options', getChallengeOptionsController);
-router.post('/challenge/activate', activateChallengeController);
-router.post('/challenge/deactivate', deactivateChallengeController);
-router.get('/all_distinct_challenges', getAllDistinctChallengesController);
-router.get('/challenge_stats', getChallengeStatsController);
-router.post('/challenges', createChallengeController);
-router.get('/challenges', listChallengesController);
-router.put('/challenges/:id', updateChallengeController);
-router.delete('/challenges/:id', deleteChallengeController);
-router.get('/debug/all_challenges', getAllChallengesForDebug);
-router.get('/form-options', getQuestionFormOptionsController);
+router.post('/toggle_config/:key', requireAdminAccess, toggleAdminConfigController);
+router.post('/set_config/:key', requireAdminAccess, setAdminConfigController);
+router.get('/challenge_options', requireAdminAccess, getChallengeOptionsController);
+router.post('/challenge/activate', requireAdminAccess, activateChallengeController);
+router.post('/challenge/deactivate', requireAdminAccess, deactivateChallengeController);
+router.get('/all_distinct_challenges', requireAdminAccess, getAllDistinctChallengesController);
+router.get('/challenge_stats', requireAdminAccess, getChallengeStatsController);
+router.post('/challenges', requireAdminAccess, createChallengeController);
+router.get('/challenges', requireAdminAccess, listChallengesController);
+router.put('/challenges/:id', requireAdminAccess, updateChallengeController);
+router.delete('/challenges/:id', requireAdminAccess, deleteChallengeController);
+router.get('/debug/all_challenges', requireAdminAccess, getAllChallengesForDebug);
+router.get('/form-options', requireAdminAccess, getQuestionFormOptionsController);
 
 // === NOVAS ROTAS PARA GERENCIAR USUÁRIOS ===
-router.get('/users', getAllUsers);
-router.delete('/users/:telegram_id', deleteUser);
+router.get('/users', requireAdminAccess, getAllUsers);
+router.delete('/users/:telegram_id', requireAdminAccess, deleteUser);
 
 export default router;

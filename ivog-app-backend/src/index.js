@@ -21,7 +21,34 @@ import knowledgePillsRoutes from './routes/knowledgePillsRoutes.js'; // Adicione
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-app.use(cors());
+// --- INÍCIO DA ALTERAÇÃO CORS ---
+
+// 1. Defina as origens permitidas
+const allowedOrigins = [
+  'http://34.53.92.86:3001',      // Acesso via IP para rede corporativa
+  'https://frontivog.ivogapi.xyz', // Acesso via domínio de produção (Frontend)
+  'http://localhost:5173',          // Para desenvolvimento local com `npm run dev`
+  'http://localhost:4173'           // Para teste local com `npm run preview`
+];
+
+// 2. Crie as opções do CORS
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permite requisições da nossa lista e requisições sem 'origin' (ex: Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+// 3. Use o middleware 'cors' com as opções configuradas
+app.use(cors(corsOptions));
+
+// --- FIM DA ALTERAÇÃO CORS ---
+
+
 app.use(express.json());
 
 // Rotas públicas e de autenticação

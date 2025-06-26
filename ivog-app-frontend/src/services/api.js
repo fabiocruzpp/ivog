@@ -22,15 +22,38 @@ if (telegramWebApp && !telegramWebApp.isExpanded) {
     telegramWebApp.ready();
 }
 
+// --- INÍCIO DA ALTERAÇÃO ---
+// Função para determinar a URL base da API dinamicamente
+const getApiBaseUrl = () => {
+  const hostname = window.location.hostname;
+
+  // Cenário 1: Acesso via IP (rede corporativa)
+  if (hostname === '34.53.92.86') {
+    console.log("📍 Ambiente: IP Corporativo. Apontando para backend via IP.");
+    return 'http://34.53.92.86:5001/api';
+  }
+
+  // Cenário 2: Acesso via domínio de produção (Telegram, etc.)
+  if (hostname === 'frontivog.ivogapi.xyz') {
+    console.log("📍 Ambiente: Produção. Apontando para backend via domínio.");
+    return 'https://ivog.ivogapi.xyz/api';
+  }
+
+  // Cenário 3: Fallback para desenvolvimento local
+  console.log("📍 Ambiente: Local. Apontando para backend local.");
+  return 'http://localhost:5001/api';
+};
+// --- FIM DA ALTERAÇÃO ---
+
 const api = axios.create({
-    baseURL: 'https://ivog.ivogapi.xyz/api',
+    baseURL: getApiBaseUrl(), // <-- AQUI USAMOS A FUNÇÃO DINÂMICA
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
     }
 });
 
-// Interceptor para adicionar autenticação
+// Interceptor para adicionar autenticação (SEU CÓDIGO ORIGINAL MANTIDO)
 api.interceptors.request.use(
     (config) => {
         console.log(`🚀 Fazendo requisição para: ${config.method?.toUpperCase()} ${config.url}`);
@@ -109,7 +132,7 @@ api.interceptors.request.use(
     }
 );
 
-// Interceptor para tratar respostas (mesmo código anterior)
+// Interceptor para tratar respostas (SEU CÓDIGO ORIGINAL MANTIDO)
 api.interceptors.response.use(
     (response) => {
         console.log(`✅ Resposta bem-sucedida: ${response.status} - ${response.config.url}`);
@@ -134,7 +157,7 @@ api.interceptors.response.use(
     }
 );
 
-// Função para debug manual
+// Função para debug manual (SEU CÓDIGO ORIGINAL MANTIDO)
 window.debugTelegram = () => {
     const info = {
         windowTelegram: !!window.Telegram,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import styles from './QuestionManagerPage.module.css';
@@ -16,7 +16,14 @@ function QuestionManagerPage() {
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [importing, setImporting] = useState(false);
     const [telegramId, setTelegramId] = useState(null);
-    const [selectedIds, setSelectedIds] = useState([]); // NOVO ESTADO
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [filterOptions, setFilterOptions] = useState({ subtemas: [], canais: [], publicos: [] });
+    const [filters, setFilters] = useState({
+        searchTerm: '',
+        subtema: '',
+        canal: '',
+        publico: ''
+    });
 
     const fileInputRef = useRef(null);
     const headerCheckboxRef = useRef(null);
@@ -25,28 +32,41 @@ function QuestionManagerPage() {
         const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (user && user.id) {
             setTelegramId(user.id.toString());
+        } else {
+             // Fallback para desenvolvimento fora do Telegram
+            setTelegramId('1318210843'); 
         }
+
+        // Busca opções para os filtros
+        const fetchFilterOptions = async () => {
+             try {
+                const response = await api.get('/admin/form-options');
+                setFilterOptions(prev => ({
+                    ...prev,
+                    canais: response.data.canais || [],
+                    publicos: response.data.cargos || []
+                }));
+            } catch (error) {
+                console.error("Falha ao carregar opções de filtro", error);
+            }
+        };
+        fetchFilterOptions();
     }, []);
-    
-    // Sincroniza o estado do checkbox "selecionar todos"
+
+    // Atualiza as opções de subtema quando as perguntas são carregadas/alteradas
     useEffect(() => {
-        if (headerCheckboxRef.current) {
-            const allIdsOnPage = questions.map(q => q.id);
-            const allOnPageSelected = allIdsOnPage.length > 0 && allIdsOnPage.every(id => selectedIds.includes(id));
-            headerCheckboxRef.current.checked = allOnPageSelected;
-            headerCheckboxRef.current.indeterminate = !allOnPageSelected && selectedIds.some(id => allIdsOnPage.includes(id));
+        if (questions.length > 0) {
+            const subtemasUnicos = [...new Set(questions.map(q => q.subtema).filter(Boolean))].sort();
+            setFilterOptions(prev => ({ ...prev, subtemas: subtemasUnicos }));
         }
-    }, [selectedIds, questions]);
+    }, [questions]);
 
     const fetchQuestions = useCallback(async () => {
-        const isWeb = !window.Telegram?.WebApp?.initData;
-        if (!isWeb && !telegramId) {
-            return;
-        }
+        if (!telegramId) return;
 
         try {
             setLoading(true);
-            const params = telegramId ? { telegram_id: telegramId } : {};
+            const params = { telegram_id: telegramId };
             const response = await api.get('/admin/questions', { params });
             setQuestions(response.data);
             setError('');
@@ -61,6 +81,38 @@ function QuestionManagerPage() {
     useEffect(() => {
         fetchQuestions();
     }, [fetchQuestions]);
+
+    const filteredQuestions = useMemo(() => {
+        return questions.filter(q => {
+            const { searchTerm, subtema, canal, publico } = filters;
+            const searchLower = searchTerm.toLowerCase();
+
+            const searchTermMatch = searchTerm === '' ||
+                q.pergunta_formatada_display.toLowerCase().includes(searchLower) ||
+                q.tema.toLowerCase().includes(searchLower) ||
+                (q.subtema && q.subtema.toLowerCase().includes(searchLower));
+            
+            const subtemaMatch = subtema === '' || q.subtema === subtema;
+            const canalMatch = canal === '' || q.canal.length === 0 || q.canal.includes(canal);
+            const publicoMatch = publico === '' || q.publico.length === 0 || q.publico.includes(publico);
+
+            return searchTermMatch && subtemaMatch && canalMatch && publicoMatch;
+        });
+    }, [questions, filters]);
+
+    useEffect(() => {
+        if (headerCheckboxRef.current) {
+            const allIdsOnPage = filteredQuestions.map(q => q.id);
+            const allOnPageSelected = allIdsOnPage.length > 0 && allIdsOnPage.every(id => selectedIds.includes(id));
+            headerCheckboxRef.current.checked = allOnPageSelected;
+            headerCheckboxRef.current.indeterminate = !allOnPageSelected && selectedIds.some(id => allIdsOnPage.includes(id));
+        }
+    }, [selectedIds, filteredQuestions]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleOpenCreateModal = () => {
         setEditingQuestion(null);
@@ -84,7 +136,6 @@ function QuestionManagerPage() {
                 fetchQuestions();
             } catch (err) {
                 alert('Erro ao excluir a pergunta.');
-                console.error(err);
             }
         }
     };
@@ -101,7 +152,6 @@ function QuestionManagerPage() {
             fetchQuestions();
         } catch (err) {
             alert('Erro ao salvar a pergunta.');
-            console.error(err);
         }
     };
 
@@ -116,32 +166,24 @@ function QuestionManagerPage() {
         const formData = new FormData();
         formData.append('file', file);
         
-        const url = telegramId 
-            ? `/admin/import-questions?telegram_id=${telegramId}` 
-            : '/admin/import-questions';
+        const url = `/admin/import-questions?telegram_id=${telegramId}`;
 
         try {
             setImporting(true);
-            const response = await api.post(url, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            const response = await api.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert(response.data.message);
             fetchQuestions();
         } catch (err) {
-            const errorMessage = err.response?.data?.error || 'Erro ao importar o arquivo.';
-            alert(errorMessage);
-            console.error(err);
+            alert(err.response?.data?.error || 'Erro ao importar o arquivo.');
         } finally {
             setImporting(false);
             event.target.value = null;
         }
     };
 
-    // --- NOVAS FUNÇÕES PARA SELEÇÃO ---
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            const allIds = questions.map(q => q.id);
-            setSelectedIds(allIds);
+            setSelectedIds(filteredQuestions.map(q => q.id));
         } else {
             setSelectedIds([]);
         }
@@ -162,15 +204,11 @@ function QuestionManagerPage() {
         }
         if (window.confirm(`Tem certeza que deseja excluir as ${selectedIds.length} perguntas selecionadas?`)) {
             try {
-                await api.post('/admin/questions/bulk-delete', { 
-                    ids: selectedIds,
-                    telegram_id: telegramId 
-                });
+                await api.post('/admin/questions/bulk-delete', { ids: selectedIds, telegram_id: telegramId });
                 setSelectedIds([]);
                 fetchQuestions();
             } catch (err) {
                 alert("Erro ao excluir as perguntas selecionadas.");
-                console.error(err);
             }
         }
     };
@@ -178,6 +216,12 @@ function QuestionManagerPage() {
     const renderContent = () => {
         if (loading) return <p className={styles.message}>Carregando perguntas...</p>;
         if (error) return <p className={`${styles.message} ${styles.error}`}>{error}</p>;
+
+        const formatCell = (data) => {
+            if (Array.isArray(data) && data.length > 0) return data.join(', ');
+            if (Array.isArray(data) && data.length === 0) return 'Todos';
+            return data || '-';
+        };
 
         return (
             <div className={styles.tableContainer}>
@@ -187,21 +231,25 @@ function QuestionManagerPage() {
                             <th className={styles.checkboxCell}>
                                 <input type="checkbox" ref={headerCheckboxRef} onChange={handleSelectAll} />
                             </th>
-                            <th>ID</th>
                             <th>Tema</th>
+                            <th>Subtema</th>
                             <th>Pergunta</th>
+                            <th className={styles.tagsCell}>Canal</th>
+                            <th className={styles.tagsCell}>Público</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {questions.length > 0 ? questions.map(q => (
+                        {filteredQuestions.length > 0 ? filteredQuestions.map(q => (
                             <tr key={q.id}>
                                 <td className={styles.checkboxCell}>
                                     <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => handleSelectOne(q.id)} />
                                 </td>
-                                <td>{q.id}</td>
                                 <td>{q.tema}</td>
-                                <td className={styles.questionTextCell}>{q.pergunta_formatada_display}</td>
+                                <td>{q.subtema || '-'}</td>
+                                <td className={styles.questionTextCell} title={q.pergunta_formatada_display}>{q.pergunta_formatada_display}</td>
+                                <td className={styles.tagsCell}>{formatCell(q.canal)}</td>
+                                <td className={styles.tagsCell}>{formatCell(q.publico)}</td>
                                 <td className={styles.actionsCell}>
                                     <button onClick={() => handleOpenEditModal(q)} className={styles.editButton}>Editar</button>
                                     <button onClick={() => handleDelete(q.id)} className={styles.deleteButton}>Excluir</button>
@@ -209,7 +257,7 @@ function QuestionManagerPage() {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan="5">Nenhuma pergunta encontrada.</td>
+                                <td colSpan="7">Nenhuma pergunta encontrada com os filtros atuais.</td>
                             </tr>
                         )}
                     </tbody>
@@ -220,7 +268,6 @@ function QuestionManagerPage() {
 
     return (
         <div className={styles.screenContainer}>
-            
             <div className={styles.contentArea}>
                 <div className={styles.toolbar}>
                     <div>
@@ -238,6 +285,32 @@ function QuestionManagerPage() {
                         )}
                     </div>
                 </div>
+
+                <div className={styles.filterBar}>
+                    <input
+                        type="text"
+                        name="searchTerm"
+                        placeholder="🔎 Buscar por pergunta, tema..."
+                        value={filters.searchTerm}
+                        onChange={handleFilterChange}
+                        className={styles.searchInput}
+                    />
+                    <div className={styles.filterGroup}>
+                        <select name="subtema" value={filters.subtema} onChange={handleFilterChange} className={styles.filterSelect}>
+                            <option value="">Todos os Subtemas</option>
+                            {filterOptions.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        <select name="canal" value={filters.canal} onChange={handleFilterChange} className={styles.filterSelect}>
+                            <option value="">Todos os Canais</option>
+                            {filterOptions.canais.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        <select name="publico" value={filters.publico} onChange={handleFilterChange} className={styles.filterSelect}>
+                            <option value="">Todos os Públicos</option>
+                            {filterOptions.publicos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                    </div>
+                </div>
+
                 {renderContent()}
             </div>
 

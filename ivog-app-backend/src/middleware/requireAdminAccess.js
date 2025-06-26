@@ -11,7 +11,7 @@ console.log('🔧 Middleware inicializado com:', {
     processEnvKeys: Object.keys(process.env).filter(key => key.includes('TELEGRAM') || key.includes('ADMIN'))
 });
 
-// Função para verificar dados do Telegram WebApp
+// Função para verificar dados do Telegram WebApp (mantida como está)
 function verifyTelegramWebAppData(initData, botToken) {
     if (!initData || !botToken) return false;
     
@@ -59,7 +59,11 @@ export const requireAdminAccess = (req, res, next) => {
         const token = authHeader.substring(7);
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            if (decoded.role === 'admin' || decoded.telegramId === ADMIN_TELEGRAM_ID) {
+            
+            // --- INÍCIO DA CORREÇÃO ---
+            // Corrigido para verificar a propriedade 'isAdmin', que realmente existe no token.
+            if (decoded.isAdmin) {
+            // --- FIM DA CORREÇÃO ---
                 console.log('✅ Acesso autorizado via JWT para admin:', decoded);
                 req.user = decoded;
                 return next();
