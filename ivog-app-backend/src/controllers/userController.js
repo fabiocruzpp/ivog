@@ -81,41 +81,44 @@ export const registerOrUpdateUser = async (req, res) => {
   try {
     console.log('[REGISTER USER] Requisição recebida:', req.body);
     
-    const { telegram_id, first_name, ddd, canal_principal, cargo, loja_revenda, matricula } = req.body;
+    // 1. ADICIONADO `rede_parceiro` para ser recebido do frontend.
+    const { telegram_id, first_name, ddd, canal_principal, tipo_parceiro, rede_parceiro, cargo, loja_revenda, matricula } = req.body;
     
     if (!telegram_id || !first_name) {
       return res.status(400).json({ error: 'telegram_id e first_name são obrigatórios' });
     }
     
-    // Verificar se o usuário já existe
     const existingUser = await dbGet("SELECT * FROM usuarios WHERE telegram_id = ?", [telegram_id]);
     
     if (existingUser) {
-      // Atualizar usuário existente
+      // 2. QUERY SQL ATUALIZADA para incluir o campo 'rede_parceiro'
       const updateSql = `
         UPDATE usuarios 
-        SET first_name = ?, ddd = ?, canal_principal = ?, cargo = ?, loja_revenda = ?, matricula = ?
+        SET first_name = ?, ddd = ?, canal_principal = ?, tipo_parceiro = ?, rede_parceiro = ?, cargo = ?, loja_revenda = ?, matricula = ?
         WHERE telegram_id = ?
       `;
       
-      await dbRun(updateSql, [first_name, ddd, canal_principal, cargo, loja_revenda, matricula, telegram_id]);
+      // 3. PARÂMETROS ATUALIZADOS para passar o valor de 'rede_parceiro'
+      await dbRun(updateSql, [first_name, ddd, canal_principal, tipo_parceiro, rede_parceiro, cargo, loja_revenda, matricula, telegram_id]);
       
       console.log('[REGISTER USER] Usuário atualizado:', telegram_id);
       res.status(200).json({ message: 'Usuário atualizado com sucesso', user: { telegram_id, first_name } });
     } else {
-      // Criar novo usuário
+      // 4. INSERT SQL ATUALIZADO para incluir 'rede_parceiro' no cadastro de novos usuários.
       const insertSql = `
-        INSERT INTO usuarios (telegram_id, first_name, ddd, canal_principal, cargo, loja_revenda, matricula, data_cadastro)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO usuarios (telegram_id, first_name, ddd, canal_principal, tipo_parceiro, rede_parceiro, cargo, loja_revenda, matricula, data_cadastro)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       await dbRun(insertSql, [
         telegram_id, 
         first_name, 
-        ddd || '91', 
-        canal_principal || 'Loja Própria', 
-        cargo || 'GG', 
-        loja_revenda || 'Loja Padrão',
+        ddd || null, 
+        canal_principal || null, 
+        tipo_parceiro || null,
+        rede_parceiro || null, // 5. Valor de 'rede_parceiro' adicionado.
+        cargo || null, 
+        loja_revenda || null,
         matricula || null,
         new Date().toISOString()
       ]);
