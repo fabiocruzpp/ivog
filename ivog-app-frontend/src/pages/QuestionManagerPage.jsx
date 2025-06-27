@@ -33,11 +33,9 @@ function QuestionManagerPage() {
         if (user && user.id) {
             setTelegramId(user.id.toString());
         } else {
-             // Fallback para desenvolvimento fora do Telegram
             setTelegramId('1318210843'); 
         }
 
-        // Busca opções para os filtros
         const fetchFilterOptions = async () => {
              try {
                 const response = await api.get('/admin/form-options');
@@ -53,7 +51,6 @@ function QuestionManagerPage() {
         fetchFilterOptions();
     }, []);
 
-    // Atualiza as opções de subtema quando as perguntas são carregadas/alteradas
     useEffect(() => {
         if (questions.length > 0) {
             const subtemasUnicos = [...new Set(questions.map(q => q.subtema).filter(Boolean))].sort();
@@ -72,7 +69,6 @@ function QuestionManagerPage() {
             setError('');
         } catch (err) {
             setError('Falha ao carregar as perguntas.');
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -81,7 +77,8 @@ function QuestionManagerPage() {
     useEffect(() => {
         fetchQuestions();
     }, [fetchQuestions]);
-
+    
+    // --- LÓGICA DE FILTRO (EXISTENTE) ---
     const filteredQuestions = useMemo(() => {
         return questions.filter(q => {
             const { searchTerm, subtema, canal, publico } = filters;
@@ -99,7 +96,8 @@ function QuestionManagerPage() {
             return searchTermMatch && subtemaMatch && canalMatch && publicoMatch;
         });
     }, [questions, filters]);
-
+    
+    // --- LÓGICA DE SELEÇÃO (EXISTENTE) ---
     useEffect(() => {
         if (headerCheckboxRef.current) {
             const allIdsOnPage = filteredQuestions.map(q => q.id);
@@ -155,19 +153,14 @@ function QuestionManagerPage() {
         }
     };
 
-    const handleImportClick = () => {
-        fileInputRef.current.click();
-    };
+    const handleImportClick = () => fileInputRef.current.click();
 
     const handleFileImport = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
         const formData = new FormData();
         formData.append('file', file);
-        
         const url = `/admin/import-questions?telegram_id=${telegramId}`;
-
         try {
             setImporting(true);
             const response = await api.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -182,34 +175,42 @@ function QuestionManagerPage() {
     };
 
     const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedIds(filteredQuestions.map(q => q.id));
-        } else {
-            setSelectedIds([]);
-        }
+        setSelectedIds(e.target.checked ? filteredQuestions.map(q => q.id) : []);
     };
 
     const handleSelectOne = (id) => {
-        setSelectedIds(prev => 
-            prev.includes(id) 
-                ? prev.filter(selectedId => selectedId !== id) 
-                : [...prev, id]
-        );
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
     };
 
     const handleBulkDelete = async () => {
-        if (selectedIds.length === 0) {
-            alert("Nenhuma pergunta selecionada.");
-            return;
+        if (selectedIds.length === 0 || !window.confirm(`Excluir as ${selectedIds.length} perguntas selecionadas?`)) return;
+        try {
+            await api.post('/admin/questions/bulk-delete', { ids: selectedIds, telegram_id: telegramId });
+            setSelectedIds([]);
+            fetchQuestions();
+        } catch (err) {
+            alert("Erro ao excluir as perguntas selecionadas.");
         }
-        if (window.confirm(`Tem certeza que deseja excluir as ${selectedIds.length} perguntas selecionadas?`)) {
-            try {
-                await api.post('/admin/questions/bulk-delete', { ids: selectedIds, telegram_id: telegramId });
-                setSelectedIds([]);
-                fetchQuestions();
-            } catch (err) {
-                alert("Erro ao excluir as perguntas selecionadas.");
-            }
+    };
+
+    // --- INÍCIO DA ALTERAÇÃO ---
+    // Nova função para ativar/desativar pergunta
+    const handleToggleStatus = async (questionId) => {
+        // Atualização otimista da UI para resposta rápida
+        setQuestions(prev => prev.map(q => 
+            q.id === questionId ? { ...q, is_active: q.is_active ? 0 : 1 } : q
+        ));
+
+        try {
+            await api.patch(`/admin/questions/toggle-status/${questionId}`, { telegram_id: telegramId });
+            // Opcional: pode chamar fetchQuestions() aqui se quiser garantir a sincronia total,
+            // mas a atualização otimista já reflete a mudança.
+        } catch (err) {
+            alert("Erro ao alterar o status da pergunta. Revertendo alteração.");
+            // Reverte a mudança na UI em caso de erro na API
+            setQuestions(prev => prev.map(q => 
+                q.id === questionId ? { ...q, is_active: q.is_active ? 0 : 1 } : q
+            ));
         }
     };
 
@@ -217,22 +218,16 @@ function QuestionManagerPage() {
         if (loading) return <p className={styles.message}>Carregando perguntas...</p>;
         if (error) return <p className={`${styles.message} ${styles.error}`}>{error}</p>;
 
-        const formatCell = (data) => {
-            if (Array.isArray(data) && data.length > 0) return data.join(', ');
-            if (Array.isArray(data) && data.length === 0) return 'Todos';
-            return data || '-';
-        };
+        const formatCell = (data) => (Array.isArray(data) && data.length > 0) ? data.join(', ') : 'Todos';
 
         return (
             <div className={styles.tableContainer}>
                 <table className={styles.questionsTable}>
                     <thead>
                         <tr>
-                            <th className={styles.checkboxCell}>
-                                <input type="checkbox" ref={headerCheckboxRef} onChange={handleSelectAll} />
-                            </th>
+                            <th className={styles.checkboxCell}><input type="checkbox" ref={headerCheckboxRef} onChange={handleSelectAll} /></th>
+                            <th className={styles.statusCell}>Status</th>
                             <th>Tema</th>
-                            <th>Subtema</th>
                             <th>Pergunta</th>
                             <th className={styles.tagsCell}>Canal</th>
                             <th className={styles.tagsCell}>Público</th>
@@ -241,30 +236,34 @@ function QuestionManagerPage() {
                     </thead>
                     <tbody>
                         {filteredQuestions.length > 0 ? filteredQuestions.map(q => (
-                            <tr key={q.id}>
-                                <td className={styles.checkboxCell}>
-                                    <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => handleSelectOne(q.id)} />
+                            <tr key={q.id} className={!q.is_active ? styles.inactiveRow : ''}>
+                                <td className={styles.checkboxCell}><input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => handleSelectOne(q.id)} /></td>
+                                <td className={styles.statusCell}>
+                                    <span className={q.is_active ? styles.statusActive : styles.statusInactive}>
+                                        {q.is_active ? 'Ativa' : 'Inativa'}
+                                    </span>
                                 </td>
                                 <td>{q.tema}</td>
-                                <td>{q.subtema || '-'}</td>
                                 <td className={styles.questionTextCell} title={q.pergunta_formatada_display}>{q.pergunta_formatada_display}</td>
                                 <td className={styles.tagsCell}>{formatCell(q.canal)}</td>
                                 <td className={styles.tagsCell}>{formatCell(q.publico)}</td>
                                 <td className={styles.actionsCell}>
+                                    <button onClick={() => handleToggleStatus(q.id)} className={styles.toggleButton}>
+                                        {q.is_active ? 'Desativar' : 'Ativar'}
+                                    </button>
                                     <button onClick={() => handleOpenEditModal(q)} className={styles.editButton}>Editar</button>
                                     <button onClick={() => handleDelete(q.id)} className={styles.deleteButton}>Excluir</button>
                                 </td>
                             </tr>
                         )) : (
-                            <tr>
-                                <td colSpan="7">Nenhuma pergunta encontrada com os filtros atuais.</td>
-                            </tr>
+                            <tr><td colSpan="7">Nenhuma pergunta encontrada com os filtros atuais.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
         );
     };
+    // --- FIM DA ALTERAÇÃO ---
 
     return (
         <div className={styles.screenContainer}>
@@ -273,28 +272,14 @@ function QuestionManagerPage() {
                     <div>
                         <button onClick={handleOpenCreateModal} className={styles.primaryButton}>Criar Nova Pergunta</button>
                         <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".xlsx" style={{ display: 'none' }} />
-                        <button onClick={handleImportClick} className={styles.secondaryButton} disabled={importing}>
-                            {importing ? 'Importando...' : 'Importar XLSX'}
-                        </button>
+                        <button onClick={handleImportClick} className={styles.secondaryButton} disabled={importing}>{importing ? 'Importando...' : 'Importar XLSX'}</button>
                     </div>
                     <div>
-                        {selectedIds.length > 0 && (
-                             <button onClick={handleBulkDelete} className={styles.bulkDeleteButton}>
-                                Excluir Selecionadas ({selectedIds.length})
-                             </button>
-                        )}
+                        {selectedIds.length > 0 && <button onClick={handleBulkDelete} className={styles.bulkDeleteButton}>Excluir Selecionadas ({selectedIds.length})</button>}
                     </div>
                 </div>
-
                 <div className={styles.filterBar}>
-                    <input
-                        type="text"
-                        name="searchTerm"
-                        placeholder="🔎 Buscar por pergunta, tema..."
-                        value={filters.searchTerm}
-                        onChange={handleFilterChange}
-                        className={styles.searchInput}
-                    />
+                    <input type="text" name="searchTerm" placeholder="🔎 Buscar por pergunta, tema..." value={filters.searchTerm} onChange={handleFilterChange} className={styles.searchInput}/>
                     <div className={styles.filterGroup}>
                         <select name="subtema" value={filters.subtema} onChange={handleFilterChange} className={styles.filterSelect}>
                             <option value="">Todos os Subtemas</option>
@@ -310,17 +295,9 @@ function QuestionManagerPage() {
                         </select>
                     </div>
                 </div>
-
                 {renderContent()}
             </div>
-
-            <QuestionFormModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                onSubmit={handleSubmit}
-                question={editingQuestion}
-                telegramId={telegramId} 
-            />
+            <QuestionFormModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} question={editingQuestion} telegramId={telegramId} />
         </div>
     );
 }

@@ -6,8 +6,6 @@ const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// ... (as outras funções do controller permanecem iguais)
-
 export const getAvailableThemesController = async (req, res) => {
     try {
         const { telegram_id } = req.query;
@@ -19,6 +17,7 @@ export const getAvailableThemesController = async (req, res) => {
         const allQuestions = await loadAllQuestions();
 
         const userAvailableQuestions = allQuestions.filter(q => 
+            q.is_active === 1 && // <-- FILTRO ADICIONADO AQUI
             (q.canal.length === 0 || q.canal.includes(user.canal_principal)) && 
             (q.publico.length === 0 || q.publico.includes(user.cargo)) &&
             (q.tema && q.tema !== 'Não especificado')
@@ -44,7 +43,11 @@ export const startQuizController = async (req, res) => {
       return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes.' });
     }
 
-    const allQuestions = await loadAllQuestions();
+    const allQuestionsRaw = await loadAllQuestions();
+    // --- INÍCIO DA ALTERAÇÃO ---
+    // Filtra apenas as perguntas ativas ANTES de qualquer outra lógica
+    const allQuestions = allQuestionsRaw.filter(q => q.is_active === 1);
+    // --- FIM DA ALTERAÇÃO ---
     
     let quizQuestions = [];
     const isTrainingMode = is_training === 'true';
@@ -153,7 +156,6 @@ export const finishQuizController = async (req, res) => {
       return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
     }
 
-    // CORREÇÃO: Busca também o contexto do desafio para saber se é um desafio
     const simulado = await dbGet("SELECT is_training, contexto_desafio FROM simulados WHERE id_simulado = ?", [simulado_id]);
     const isChallenge = !!simulado?.contexto_desafio;
 
@@ -185,7 +187,7 @@ export const finishQuizController = async (req, res) => {
     res.status(200).json({ 
       status: "success", 
       is_training: false,
-      is_challenge: isChallenge, // Envia a flag para o frontend
+      is_challenge: isChallenge,
       pontuacao_base, 
       pontuacao_final_com_bonus: pontos_finais_truncados, 
       num_acertos, 

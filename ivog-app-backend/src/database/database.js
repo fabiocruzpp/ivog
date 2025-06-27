@@ -34,6 +34,15 @@ const initializeDb = () => {
                 console.log("Coluna 'matricula' adicionada com sucesso à tabela usuarios");
             }
         });
+        // --- INÍCIO DA ALTERAÇÃO ---
+        db.run("ALTER TABLE perguntas ADD COLUMN is_active INTEGER DEFAULT 1", (err) => {
+             if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao adicionar coluna 'is_active':", err.message);
+            } else if (!err) {
+                console.log("Coluna 'is_active' adicionada com sucesso à tabela perguntas");
+            }
+        });
+        // --- FIM DA ALTERAÇÃO ---
     };
 
     const seedInitialConfigs = () => {
@@ -90,6 +99,23 @@ const initializeDb = () => {
             is_admin BOOLEAN DEFAULT FALSE,
             matricula TEXT
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'usuarios':", err.message); });
+        
+        // --- INÍCIO DA ALTERAÇÃO ---
+        // Adicionando a nova coluna 'is_active' no comando de criação da tabela
+        db.run(`CREATE TABLE IF NOT EXISTS perguntas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pergunta_formatada_display TEXT,
+            alternativas TEXT,
+            correta TEXT,
+            publico TEXT,
+            canal TEXT,
+            tema TEXT,
+            subtema TEXT,
+            feedback TEXT,
+            fonte TEXT,
+            is_active INTEGER DEFAULT 1
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'perguntas':", err.message); });
+        // --- FIM DA ALTERAÇÃO ---
 
         db.run(`CREATE TABLE IF NOT EXISTS admin_credentials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
