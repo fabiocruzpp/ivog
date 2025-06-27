@@ -16,3 +16,4 @@ export const getBiDataUsuarios = getAllFromTable('usuarios');
 export const getBiDataResultados = getAllFromTable('resultados');
 export const getBiDataRespostas = getAllFromTable('respostas_simulado');
 export const getBiDataSimulados = getAllFromTable('simulados');
+export const getBiDataDesafios = getAllFromTable('desafios');
