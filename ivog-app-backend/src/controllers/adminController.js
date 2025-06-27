@@ -225,20 +225,21 @@ export const getChallengeStatsController = async (req, res) => {
 };
 
 export const createChallengeController = async (req, res) => {
-    const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas } = req.body;
-    if (!titulo || !data_inicio || !data_fim || !publico_alvo || !filtros ) {
+    const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas, perguntas_ids } = req.body;
+    if (!titulo || !data_inicio || !data_fim || !publico_alvo ) {
         return res.status(400).json({ error: 'Campos obrigatórios estão ausentes.' });
     }
 
     const publicoAlvoJson = JSON.stringify(publico_alvo);
+    const perguntasIdsJson = (perguntas_ids && perguntas_ids.length > 0) ? JSON.stringify(perguntas_ids) : null;
 
     try {
         await dbRun('BEGIN TRANSACTION');
 
         const desafioId = await new Promise((resolve, reject) => {
             db.run(
-                `INSERT INTO desafios (titulo, descricao, publico_alvo_json, data_inicio, data_fim, status, num_perguntas) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status || 'ativo', num_perguntas || 10],
+                `INSERT INTO desafios (titulo, descricao, publico_alvo_json, data_inicio, data_fim, status, num_perguntas, perguntas_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status || 'ativo', num_perguntas || 10, perguntasIdsJson],
                 function(err) {
                     if (err) return reject(err);
                     resolve(this.lastID);
@@ -246,12 +247,15 @@ export const createChallengeController = async (req, res) => {
             );
         });
 
-        for (const filtro of filtros) {
-            if (filtro.valor) {
-                await dbRun(
-                    `INSERT INTO desafio_filtros (desafio_id, tipo_filtro, valor_filtro) VALUES (?, ?, ?)`,
-                    [desafioId, filtro.tipo, filtro.valor]
-                );
+        // A lógica de filtros por tema/subtema só é salva se não houver seleção manual
+        if (!perguntasIdsJson && filtros) {
+            for (const filtro of filtros) {
+                if (filtro.valor) {
+                    await dbRun(
+                        `INSERT INTO desafio_filtros (desafio_id, tipo_filtro, valor_filtro) VALUES (?, ?, ?)`,
+                        [desafioId, filtro.tipo, filtro.valor]
+                    );
+                }
             }
         }
 
@@ -283,25 +287,27 @@ export const listChallengesController = async (req, res) => {
 
 export const updateChallengeController = async (req, res) => {
   const { id } = req.params;
-  const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas } = req.body;
+  const { titulo, descricao, data_inicio, data_fim, status, publico_alvo, filtros, num_perguntas, perguntas_ids } = req.body;
 
-  if (!titulo || !data_inicio || !data_fim || !publico_alvo || !filtros) {
+  if (!titulo || !data_inicio || !data_fim || !publico_alvo) {
     return res.status(400).json({ error: 'Campos obrigatórios estão ausentes.' });
   }
 
   const publicoAlvoJson = JSON.stringify(publico_alvo);
+  const perguntasIdsJson = (perguntas_ids && perguntas_ids.length > 0) ? JSON.stringify(perguntas_ids) : null;
 
   try {
     await dbRun('BEGIN TRANSACTION');
 
     await dbRun(
-        `UPDATE desafios SET titulo = ?, descricao = ?, publico_alvo_json = ?, data_inicio = ?, data_fim = ?, status = ?, num_perguntas = ? WHERE id = ?`,
-        [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status, num_perguntas || 10, id]
+        `UPDATE desafios SET titulo = ?, descricao = ?, publico_alvo_json = ?, data_inicio = ?, data_fim = ?, status = ?, num_perguntas = ?, perguntas_ids = ? WHERE id = ?`,
+        [titulo, descricao, publicoAlvoJson, data_inicio, data_fim, status, num_perguntas || 10, perguntasIdsJson, id]
     );
 
     await dbRun("DELETE FROM desafio_filtros WHERE desafio_id = ?", [id]);
-
-    if (filtros.length > 0) {
+    
+    // A lógica de filtros por tema/subtema só é salva se não houver seleção manual
+    if (!perguntasIdsJson && filtros && filtros.length > 0) {
         for (const filtro of filtros) {
             if (filtro.valor) {
                 await dbRun(

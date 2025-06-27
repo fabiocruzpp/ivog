@@ -8,8 +8,55 @@ const dbAll = promisify(db.all.bind(db));
 const dbGet = promisify(db.get.bind(db));
 const dbRun = promisify(db.run.bind(db));
 
-// Listar todas as perguntas
+// --- INÍCIO DA ALTERAÇÃO ---
+// Listar perguntas com filtros opcionais para o seletor de desafios
 export const listQuestionsController = async (req, res) => {
+    const { canal, publico } = req.query;
+
+    // Se a requisição contiver filtros (do seletor de desafios), retorna uma lista simplificada.
+    if (canal || publico) {
+        let query = "SELECT id, pergunta_formatada_display, tema, subtema FROM perguntas WHERE is_active = 1";
+        const params = [];
+        const whereConditions = [];
+
+        if (canal) {
+            const canais = Array.isArray(canal) ? canal : [canal];
+            const canalConditions = canais.map(c => {
+                params.push(`%"${c}"%`);
+                return "canal LIKE ?";
+            });
+            if (canalConditions.length > 0) {
+                whereConditions.push(`(canal = '[]' OR ${canalConditions.join(' OR ')})`);
+            }
+        }
+
+        if (publico) {
+            const publicos = Array.isArray(publico) ? publico : [publico];
+            const publicoConditions = publicos.map(p => {
+                params.push(`%"${p}"%`);
+                return "publico LIKE ?";
+            });
+            if (publicoConditions.length > 0) {
+                whereConditions.push(`(publico = '[]' OR ${publicoConditions.join(' OR ')})`);
+            }
+        }
+        
+        if (whereConditions.length > 0) {
+            query += ` AND ${whereConditions.join(' AND ')}`;
+        }
+
+        query += " ORDER BY tema, subtema, id";
+
+        try {
+            const questions = await dbAll(query, params);
+            return res.status(200).json(questions);
+        } catch (error) {
+           console.error("Erro ao listar perguntas com filtro:", error);
+           return res.status(500).json({ error: "Erro interno do servidor ao buscar perguntas." });
+        }
+    }
+
+    // Caso contrário (para a página principal de gerenciamento), executa a lógica original completa.
     try {
         const questions = await dbAll("SELECT * FROM perguntas ORDER BY id DESC");
         const parsedQuestions = questions.map(q => ({
@@ -20,29 +67,24 @@ export const listQuestionsController = async (req, res) => {
         }));
         res.status(200).json(parsedQuestions);
     } catch (error) {
-        console.error("Erro ao listar perguntas:", error);
+        console.error("Erro ao listar perguntas (listagem completa):", error);
         res.status(500).json({ error: "Erro interno do servidor." });
     }
 };
+// --- FIM DA ALTERAÇÃO ---
 
-// --- INÍCIO DA ALTERAÇÃO ---
-// Nova função para ativar/desativar uma pergunta
 export const toggleQuestionStatusController = async (req, res) => {
     const { id } = req.params;
     try {
-        // A query inverte o valor de is_active (0 vira 1, 1 vira 0)
         await dbRun("UPDATE perguntas SET is_active = NOT is_active WHERE id = ?", [id]);
-        clearQuestionsCache(); // Invalida o cache para que a mudança seja refletida nos quizzes
+        clearQuestionsCache();
         res.status(200).json({ message: "Status da pergunta alterado com sucesso." });
     } catch (error) {
         console.error("Erro ao alterar status da pergunta:", error);
         res.status(500).json({ error: "Erro interno do servidor." });
     }
 };
-// --- FIM DA ALTERAÇÃO ---
 
-
-// Criar uma nova pergunta
 export const createQuestionController = async (req, res) => {
     const {
         pergunta_formatada_display, alternativas, correta, publico, canal,
@@ -62,7 +104,7 @@ export const createQuestionController = async (req, res) => {
         const params = [
             pergunta_formatada_display, JSON.stringify(alternativas || []), correta,
             JSON.stringify(publico || []), JSON.stringify(canal || []),
-            tema, subtema || '', feedback || '', fonte || '', 1 // Pergunta começa como ativa
+            tema, subtema || '', feedback || '', fonte || '', 1
         ];
 
         const result = await new Promise((resolve, reject) => {
@@ -80,12 +122,11 @@ export const createQuestionController = async (req, res) => {
     }
 };
 
-// Atualizar uma pergunta existente
 export const updateQuestionController = async (req, res) => {
     const { id } = req.params;
     const {
         pergunta_formatada_display, alternativas, correta, publico, canal,
-        tema, subtema, feedback, fonte, is_active // Recebe o is_active também
+        tema, subtema, feedback, fonte, is_active
     } = req.body;
 
     if (!pergunta_formatada_display || !alternativas || !correta || !tema) {
@@ -102,7 +143,7 @@ export const updateQuestionController = async (req, res) => {
             pergunta_formatada_display, JSON.stringify(alternativas || []), correta,
             JSON.stringify(publico || []), JSON.stringify(canal || []),
             tema, subtema || '', feedback || '', fonte || '',
-            is_active, // Atualiza o status
+            is_active,
             id
         ];
 
@@ -116,7 +157,6 @@ export const updateQuestionController = async (req, res) => {
     }
 };
 
-// Deletar uma pergunta
 export const deleteQuestionController = async (req, res) => {
     const { id } = req.params;
     try {
@@ -129,7 +169,6 @@ export const deleteQuestionController = async (req, res) => {
     }
 };
 
-// Exclusão em massa
 export const bulkDeleteQuestionsController = async (req, res) => {
     const { ids } = req.body;
 

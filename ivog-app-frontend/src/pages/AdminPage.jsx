@@ -18,6 +18,7 @@ const getInitialFormData = () => ({
     num_perguntas: 10,
     publico_alvo: { canal_principal: [], cargo: [] },
     filtros: { tema: '', subtema: '' },
+    perguntas_ids: [], // Adicionada a inicialização do array de perguntas
 });
 
 // Componente de Header com Tabs
@@ -137,6 +138,9 @@ function OverviewSection() {
 
 function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
     const [formData, setFormData] = useState(getInitialFormData());
+    const [availableQuestions, setAvailableQuestions] = useState([]);
+    const [questionSearch, setQuestionSearch] = useState('');
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -153,12 +157,39 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
                     num_perguntas: challenge.num_perguntas || 10,
                     publico_alvo: challenge.publico_alvo_json ? JSON.parse(challenge.publico_alvo_json) : { canal_principal: [], cargo: [] },
                     filtros: { tema: temaFiltro, subtema: subtemaFiltro },
+                    perguntas_ids: challenge.perguntas_ids ? JSON.parse(challenge.perguntas_ids) : [],
                 });
             } else {
                 setFormData(getInitialFormData());
+                setAvailableQuestions([]);
             }
         }
     }, [challenge, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchQuestions = async () => {
+            const { canal_principal, cargo } = formData.publico_alvo;
+            if (canal_principal.length === 0 && cargo.length === 0) {
+                setAvailableQuestions([]);
+                return;
+            }
+            setLoadingQuestions(true);
+            try {
+                const params = new URLSearchParams();
+                canal_principal.forEach(c => params.append('canal', c));
+                cargo.forEach(c => params.append('publico', c));
+                const response = await api.get(`/admin/questions?${params.toString()}`);
+                setAvailableQuestions(response.data);
+            } catch (error) {
+                console.error("Erro ao buscar perguntas para o desafio:", error);
+            } finally {
+                setLoadingQuestions(false);
+            }
+        };
+        const timer = setTimeout(fetchQuestions, 500);
+        return () => clearTimeout(timer);
+    }, [formData.publico_alvo, isOpen]);
 
     if (!isOpen) return null;
 
@@ -174,26 +205,40 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
 
     const handleMultiSelectChange = (e, group, field) => {
         const values = Array.from(e.target.selectedOptions, option => option.value);
-        setFormData(prev => ({
-            ...prev,
-            [group]: {
-                ...prev[group],
-                [field]: values
-            }
-        }));
+        setFormData(prev => ({ ...prev, [group]: { ...prev[group], [field]: values } }));
+    };
+
+    const handleQuestionSelect = (questionId) => {
+        setFormData(prev => {
+            const newSelection = prev.perguntas_ids.includes(questionId)
+                ? prev.perguntas_ids.filter(id => id !== questionId)
+                : [...prev.perguntas_ids, questionId];
+            return { ...prev, perguntas_ids: newSelection, num_perguntas: newSelection.length > 0 ? newSelection.length : prev.num_perguntas };
+        });
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const { filtros, ...rest } = formData;
-        const filtrosArray = [];
-        if (filtros.tema) filtrosArray.push({ tipo: 'tema', valor: filtros.tema });
-        if (filtros.subtema) filtrosArray.push({ tipo: 'subtema', valor: filtros.subtema });
-        const finalData = { ...rest, filtros: filtrosArray };
+        const finalData = { ...rest };
+        if (finalData.perguntas_ids.length > 0) {
+            finalData.filtros = [];
+        } else {
+            const filtrosArray = [];
+            if (filtros.tema) filtrosArray.push({ tipo: 'tema', valor: filtros.tema });
+            if (filtros.subtema) filtrosArray.push({ tipo: 'subtema', valor: filtros.subtema });
+            finalData.filtros = filtrosArray;
+        }
         if (finalData.data_inicio) finalData.data_inicio = new Date(finalData.data_inicio).toISOString();
         if (finalData.data_fim) finalData.data_fim = new Date(finalData.data_fim).toISOString();
         onSubmit(finalData);
     };
+
+    const filteredAvailableQuestions = availableQuestions.filter(q =>
+        q.pergunta_formatada_display.toLowerCase().includes(questionSearch.toLowerCase())
+    );
+
+    const isManualSelection = formData.perguntas_ids.length > 0;
 
     return (
         <div className={styles.modalBackdrop}>
@@ -203,66 +248,25 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
                     <button onClick={onClose} className={styles.closeButton}>×</button>
                 </div>
                 <form onSubmit={handleSubmit} className={styles.challengeForm}>
+                    {/* --- CÓDIGO RESTAURADO --- */}
                     <div className={styles.formSection}>
                         <h3>Informações Básicas</h3>
-                        <div className={styles.formGroup}>
-                            <label>Título</label>
-                            <input name="titulo" value={formData.titulo} onChange={handleChange} required />
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label>Descrição</label>
-                            <textarea name="descricao" value={formData.descricao} onChange={handleChange}></textarea>
-                        </div>
+                        <div className={styles.formGroup}><label>Título</label><input name="titulo" value={formData.titulo} onChange={handleChange} required /></div>
+                        <div className={styles.formGroup}><label>Descrição</label><textarea name="descricao" value={formData.descricao} onChange={handleChange}></textarea></div>
                     </div>
-
                     <div className={styles.formSection}>
                         <h3>Configurações</h3>
                         <div className={styles.formGrid}>
-                            <div className={styles.formGroup}>
-                                <label>Data de Início</label>
-                                <input type="datetime-local" name="data_inicio" value={formData.data_inicio} onChange={handleChange} required />
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Data de Fim</label>
-                                <input type="datetime-local" name="data_fim" value={formData.data_fim} onChange={handleChange} required />
-                            </div>
+                            <div className={styles.formGroup}><label>Data de Início</label><input type="datetime-local" name="data_inicio" value={formData.data_inicio} onChange={handleChange} required /></div>
+                            <div className={styles.formGroup}><label>Data de Fim</label><input type="datetime-local" name="data_fim" value={formData.data_fim} onChange={handleChange} required /></div>
                         </div>
                         <div className={styles.formGrid}>
-                            <div className={styles.formGroup}>
+                             <div className={styles.formGroup}>
                                 <label>Status</label>
-                                <select name="status" value={formData.status} onChange={handleChange}>
-                                    <option value="ativo">Ativo</option>
-                                    <option value="inativo">Inativo</option>
-                                    <option value="arquivado">Arquivado</option>
-                                </select>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Nº de Perguntas</label>
-                                <input type="number" name="num_perguntas" value={formData.num_perguntas} onChange={handleChange} min="1" required />
+                                <select name="status" value={formData.status} onChange={handleChange}><option value="ativo">Ativo</option><option value="inativo">Inativo</option><option value="arquivado">Arquivado</option></select>
                             </div>
                         </div>
                     </div>
-
-                    <div className={styles.formSection}>
-                        <h3>Conteúdo</h3>
-                        <div className={styles.formGrid}>
-                            <div className={styles.formGroup}>
-                                <label>Tema</label>
-                                <select name="tema" value={formData.filtros.tema} onChange={handleFilterChange} required >
-                                    <option value="">Selecione um tema</option>
-                                    {options.temas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Subtema (Opcional)</label>
-                                <select name="subtema" value={formData.filtros.subtema} onChange={handleFilterChange}>
-                                    <option value="">Selecione um subtema</option>
-                                    {options.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className={styles.formSection}>
                         <h3>Público-Alvo</h3>
                         <div className={styles.formGrid}>
@@ -280,7 +284,49 @@ function ChallengeFormModal({ isOpen, onClose, challenge, onSubmit, options }) {
                             </div>
                         </div>
                     </div>
-
+                    {/* --- FIM DO CÓDIGO RESTAURADO --- */}
+                    
+                    <div className={styles.formSection}>
+                        <h3>Seleção de Conteúdo</h3>
+                        <p className={styles.selectionInfo}>Você pode selecionar perguntas manualmente ou usar filtros de tema/subtema.</p>
+                        <div className={styles.questionSelector}>
+                            <h4>Selecionar Perguntas Manuais</h4>
+                            <p className={styles.selectionSubInfo}>A lista abaixo é filtrada pelo público-alvo e apenas perguntas ativas são exibidas.</p>
+                            <input type="text" placeholder="🔎 Buscar na lista de perguntas..." value={questionSearch} onChange={(e) => setQuestionSearch(e.target.value)} className={styles.questionSearchInput}/>
+                            <div className={styles.questionList}>
+                                {loadingQuestions ? <p>Carregando perguntas...</p> :
+                                filteredAvailableQuestions.length > 0 ? filteredAvailableQuestions.map(q => (
+                                    <div key={q.id} className={styles.questionItem}>
+                                        <input type="checkbox" id={`q-${q.id}`} checked={formData.perguntas_ids.includes(q.id)} onChange={() => handleQuestionSelect(q.id)}/>
+                                        <label htmlFor={`q-${q.id}`}>{`#${q.id} - ${q.pergunta_formatada_display}`}</label>
+                                    </div>
+                                )) : <p>Nenhuma pergunta encontrada para o público selecionado.</p>
+                                }
+                            </div>
+                            <div className={styles.selectionCount}>{formData.perguntas_ids.length} pergunta(s) selecionada(s).</div>
+                        </div>
+                        <div className={`${styles.filterSelector} ${isManualSelection ? styles.disabledSection : ''}`}>
+                             <h4>OU Usar Filtros Automáticos</h4>
+                             <div className={styles.formGrid}>
+                                <div className={styles.formGroup}>
+                                    <label>Tema</label>
+                                    <select name="tema" value={formData.filtros.tema} onChange={handleFilterChange} required={!isManualSelection} disabled={isManualSelection}><option value="">Selecione um tema</option>{options.temas.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Subtema (Opcional)</label>
+                                    <select name="subtema" value={formData.filtros.subtema} onChange={handleFilterChange} disabled={isManualSelection}><option value="">Selecione um subtema</option>{options.subtemas.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.formSection}>
+                        <h3>Finalização</h3>
+                         <div className={styles.formGroup}>
+                            <label>Nº de Perguntas</label>
+                            <input type="number" name="num_perguntas" value={formData.num_perguntas} onChange={handleChange} min="1" required disabled={isManualSelection}/>
+                            {isManualSelection && <small>O nº de perguntas é definido pela sua seleção manual.</small>}
+                        </div>
+                    </div>
                     <div className={styles.formActions}>
                         <button type="button" onClick={onClose} className={styles.secondaryButton}>Cancelar</button>
                         <button type="submit" className={styles.primaryButton}>Salvar Desafio</button>

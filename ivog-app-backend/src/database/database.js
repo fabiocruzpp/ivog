@@ -34,7 +34,6 @@ const initializeDb = () => {
                 console.log("Coluna 'matricula' adicionada com sucesso à tabela usuarios");
             }
         });
-        // --- INÍCIO DA ALTERAÇÃO ---
         db.run("ALTER TABLE perguntas ADD COLUMN is_active INTEGER DEFAULT 1", (err) => {
              if (err && !err.message.includes('duplicate column name')) {
                 console.error("Erro ao adicionar coluna 'is_active':", err.message);
@@ -42,7 +41,16 @@ const initializeDb = () => {
                 console.log("Coluna 'is_active' adicionada com sucesso à tabela perguntas");
             }
         });
-        // --- FIM DA ALTERAÇÃO ---
+        
+        // --- INÍCIO DA CORREÇÃO ---
+        db.run("ALTER TABLE desafios ADD COLUMN perguntas_ids TEXT", (err) => {
+             if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao adicionar coluna 'perguntas_ids' à tabela 'desafios':", err.message);
+            } else if (!err) {
+                console.log("Coluna 'perguntas_ids' adicionada com sucesso à tabela 'desafios'");
+            }
+        });
+        // --- FIM DA CORREÇÃO ---
     };
 
     const seedInitialConfigs = () => {
@@ -100,8 +108,6 @@ const initializeDb = () => {
             matricula TEXT
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'usuarios':", err.message); });
         
-        // --- INÍCIO DA ALTERAÇÃO ---
-        // Adicionando a nova coluna 'is_active' no comando de criação da tabela
         db.run(`CREATE TABLE IF NOT EXISTS perguntas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             pergunta_formatada_display TEXT,
@@ -115,7 +121,6 @@ const initializeDb = () => {
             fonte TEXT,
             is_active INTEGER DEFAULT 1
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'perguntas':", err.message); });
-        // --- FIM DA ALTERAÇÃO ---
 
         db.run(`CREATE TABLE IF NOT EXISTS admin_credentials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,9 +171,9 @@ const initializeDb = () => {
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'desempenho_subtemas':", err.message); });
 
         db.run(`CREATE TABLE IF NOT EXISTS configuracoes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
             chave TEXT UNIQUE NOT NULL,
-            valor TEXT
+            valor TEXT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'configuracoes':", err.message); });
 
          db.run(`CREATE TABLE IF NOT EXISTS desafios (
@@ -178,8 +183,20 @@ const initializeDb = () => {
             data_inicio TEXT NOT NULL,
             data_fim TEXT NOT NULL,
             perguntas_ids TEXT,
-            ativo BOOLEAN DEFAULT TRUE
+            ativo BOOLEAN DEFAULT TRUE,
+            status TEXT DEFAULT 'ativo',
+            publico_alvo_json TEXT,
+            num_perguntas INTEGER DEFAULT 10
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafios':", err.message); });
+
+        db.run(`CREATE TABLE IF NOT EXISTS desafio_filtros (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            desafio_id INTEGER NOT NULL,
+            tipo_filtro TEXT NOT NULL,
+            valor_filtro TEXT NOT NULL,
+            FOREIGN KEY (desafio_id) REFERENCES desafios(id) ON DELETE CASCADE
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafio_filtros':", err.message); });
+
 
         db.run(`CREATE TABLE IF NOT EXISTS desafio_participantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,12 +220,17 @@ const initializeDb = () => {
             FOREIGN KEY (telegram_id) REFERENCES usuarios (telegram_id)
         )`, (err) => { if (err) console.error("Erro ao criar tabela 'desafio_respostas':", err.message); });
 
-        db.run(`CREATE TABLE IF NOT EXISTS pills (
+        db.run(`CREATE TABLE IF NOT EXISTS knowledge_pills (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            texto TEXT NOT NULL,
-            data_criacao TEXT NOT NULL
-        )`, (err) => { if (err) console.error("Erro ao criar tabela 'pills':", err.message); });
-
+            target_cargo TEXT,
+            tema TEXT,
+            conteudo TEXT NOT NULL,
+            media_url TEXT,
+            media_type TEXT,
+            sent_at TEXT,
+            source_file TEXT,
+            source_page INTEGER
+        )`, (err) => { if (err) console.error("Erro ao criar tabela 'knowledge_pills':", err.message); });
 
         addMissingColumns();
         seedInitialConfigs();

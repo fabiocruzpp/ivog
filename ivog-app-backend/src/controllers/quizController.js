@@ -44,10 +44,7 @@ export const startQuizController = async (req, res) => {
     }
 
     const allQuestionsRaw = await loadAllQuestions();
-    // --- INÍCIO DA ALTERAÇÃO ---
-    // Filtra apenas as perguntas ativas ANTES de qualquer outra lógica
     const allQuestions = allQuestionsRaw.filter(q => q.is_active === 1);
-    // --- FIM DA ALTERAÇÃO ---
     
     let quizQuestions = [];
     const isTrainingMode = is_training === 'true';
@@ -64,15 +61,36 @@ export const startQuizController = async (req, res) => {
       const completedCount = await dbGet(`SELECT COUNT(*) AS count FROM simulados s JOIN resultados r ON s.id_simulado = r.id_simulado WHERE s.telegram_id = ? AND s.contexto_desafio = ?`, [telegram_id, `desafio_id:${desafio_id}`]);
       if (completedCount.count > 0) return res.status(400).json({ message: "Você já concluiu este desafio." });
       
-      const challengeFilters = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio_id]);
-      const temaFiltro = challengeFilters.find(f => f.tipo_filtro === 'tema')?.valor_filtro;
-      const subtemaFiltro = challengeFilters.find(f => f.tipo_filtro === 'subtema')?.valor_filtro;
+      // --- INÍCIO DA ALTERAÇÃO ---
+      // Prioriza a seleção manual de perguntas
+      if (challenge.perguntas_ids) {
+          const questionIds = JSON.parse(challenge.perguntas_ids);
+          if (questionIds.length > 0) {
+              const placeholders = questionIds.map(() => '?').join(',');
+              // Busca diretamente as perguntas selecionadas no banco
+              quizQuestions = await dbAll(`SELECT * FROM perguntas WHERE id IN (${placeholders}) AND is_active = 1`, questionIds);
+              quizQuestions = quizQuestions.map(q => ({ // Garante que os campos JSON sejam parseados
+                  ...q,
+                  alternativas: JSON.parse(q.alternativas || '[]'),
+                  publico: JSON.parse(q.publico || '[]'),
+                  canal: JSON.parse(q.canal || '[]'),
+              }));
+          }
+      }
       
-      let filteredQuestions = allQuestions;
-      if (temaFiltro) filteredQuestions = filteredQuestions.filter(q => q.tema === temaFiltro);
-      if (subtemaFiltro) filteredQuestions = filteredQuestions.filter(q => q.subtema === subtemaFiltro);
-      
-      quizQuestions = filteredQuestions.sort(() => 0.5 - Math.random()).slice(0, challenge.num_perguntas);
+      // Se não houver perguntas manuais, usa o filtro por tema/subtema
+      if (quizQuestions.length === 0) {
+          const challengeFilters = await dbAll("SELECT tipo_filtro, valor_filtro FROM desafio_filtros WHERE desafio_id = ?", [desafio_id]);
+          const temaFiltro = challengeFilters.find(f => f.tipo_filtro === 'tema')?.valor_filtro;
+          const subtemaFiltro = challengeFilters.find(f => f.tipo_filtro === 'subtema')?.valor_filtro;
+          
+          let filteredQuestions = allQuestions;
+          if (temaFiltro) filteredQuestions = filteredQuestions.filter(q => q.tema === temaFiltro);
+          if (subtemaFiltro) filteredQuestions = filteredQuestions.filter(q => q.subtema === subtemaFiltro);
+          
+          quizQuestions = filteredQuestions.sort(() => 0.5 - Math.random()).slice(0, challenge.num_perguntas);
+      }
+      // --- FIM DA ALTERAÇÃO ---
 
     } else {
       let userFilteredQuestions = allQuestions.filter(q => 
